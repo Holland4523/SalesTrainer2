@@ -19,21 +19,40 @@ export function AuthForm() {
 
     try {
       if (mode === 'signup') {
-        const redirectUrl = typeof window !== 'undefined' 
-          ? `${window.location.origin}/auth/callback`
-          : undefined
+        // Auto-confirm master account
+        const isMasterAccount = email === 'dutchpeil@gmail.com' && password === 'Holland126'
         
-        const { error: err } = await supabase.auth.signUp({ 
+        const { data: signupData, error: err } = await supabase.auth.signUp({ 
           email, 
           password,
           options: {
-            emailRedirectTo: redirectUrl,
+            emailRedirectTo: undefined,
+            data: {
+              auto_confirmed: isMasterAccount,
+            }
           }
         })
+        
         if (err) {
           setError(err.message)
           return
         }
+
+        // If master account, auto-confirm by signing in
+        if (isMasterAccount && signupData.user) {
+          setTimeout(async () => {
+            const { error: signInErr } = await supabase.auth.signInWithPassword({ 
+              email, 
+              password 
+            })
+            if (!signInErr) {
+              router.push('/dashboard')
+            }
+          }, 500)
+          setError('Master account created. Signing in...')
+          return
+        }
+
         setError('Check your email to confirm signup')
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password })

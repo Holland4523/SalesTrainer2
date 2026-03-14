@@ -48,42 +48,73 @@ export function Dashboard({ user }: { user: any }) {
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {/* Quick Start Card */}
-          <div className="rounded-lg border border-slate-700 bg-slate-900 p-6">
-            <h2 className="text-lg font-semibold text-white mb-2">Practice Session</h2>
-            <p className="text-sm text-slate-400 mb-4">
-              Practice a sales call with AI-generated scenarios
+          <div className="rounded-lg border border-slate-700 bg-slate-900 p-6 md:col-span-2">
+            <h2 className="text-2xl font-semibold text-white mb-2">Welcome to Sales Trainer</h2>
+            <p className="text-slate-400 mb-6">
+              Practice your sales skills with AI-powered voice conversations. Use ChatGPT's voice feature for realistic roleplay scenarios, then get instant feedback on your performance.
             </p>
             <button
               onClick={() => setShowPractice(true)}
-              className="w-full rounded bg-blue-600 py-2 font-medium text-white hover:bg-blue-700"
+              className="w-full rounded bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 text-lg"
             >
-              Start Practice
+              Start Practice Session
             </button>
           </div>
 
-          {/* Stats Card */}
+          {/* Quick Stats Card */}
           <div className="rounded-lg border border-slate-700 bg-slate-900 p-6">
-            <h2 className="text-lg font-semibold text-white mb-2">Stats</h2>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Sessions:</span>
-                <span className="text-white font-semibold">0</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Avg Score:</span>
-                <span className="text-white font-semibold">--</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Features Card */}
-          <div className="rounded-lg border border-slate-700 bg-slate-900 p-6">
-            <h2 className="text-lg font-semibold text-white mb-2">Features</h2>
-            <ul className="text-sm text-slate-400 space-y-1">
-              <li>✓ AI Scenarios</li>
-              <li>✓ Instant Scoring</li>
-              <li>✓ Coaching Tips</li>
+            <h2 className="text-lg font-semibold text-white mb-4">Features</h2>
+            <ul className="text-sm text-slate-300 space-y-2">
+              <li className="flex items-center gap-2">
+                <span className="text-green-400">✓</span> Voice Conversations
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-green-400">✓</span> Custom Scenarios
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-green-400">✓</span> Instant AI Scoring
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-green-400">✓</span> Coaching Tips
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-green-400">✓</span> No Limits
+              </li>
             </ul>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-slate-700 bg-slate-900 p-8">
+          <h2 className="text-2xl font-semibold text-white mb-4">How It Works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center mx-auto mb-3">
+                <span className="text-white font-bold">1</span>
+              </div>
+              <p className="text-white font-medium mb-1">Select Scenario</p>
+              <p className="text-sm text-slate-400">Choose a customer type</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center mx-auto mb-3">
+                <span className="text-white font-bold">2</span>
+              </div>
+              <p className="text-white font-medium mb-1">Voice Call</p>
+              <p className="text-sm text-slate-400">Practice with ChatGPT</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center mx-auto mb-3">
+                <span className="text-white font-bold">3</span>
+              </div>
+              <p className="text-white font-medium mb-1">Submit Transcript</p>
+              <p className="text-sm text-slate-400">Paste conversation</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center mx-auto mb-3">
+                <span className="text-white font-bold">4</span>
+              </div>
+              <p className="text-white font-medium mb-1">Get Feedback</p>
+              <p className="text-sm text-slate-400">See your score & tips</p>
+            </div>
           </div>
         </div>
       </div>

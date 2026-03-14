@@ -12,28 +12,61 @@ const scenarios = [
     id: 1,
     title: 'Homeowner with Roaches',
     description: 'Customer has pest issues in kitchen',
-    prompt: 'You are a homeowner who discovered roaches in your kitchen last week...',
+    prompt: 'You are a homeowner who discovered roaches in your kitchen last week. You are skeptical about pest control companies because a friend had a bad experience. Ask tough questions about their service and warranty.',
   },
   {
     id: 2,
     title: 'Termite Concern',
     description: 'Customer worried about termites in basement',
-    prompt: 'I found some wood damage in my basement and I am worried it might be termites...',
+    prompt: 'I found some wood damage in my basement and I am worried it might be termites. I\'ve already gotten two quotes from other companies. Ask me why I should choose you instead.',
   },
   {
     id: 3,
     title: 'Seasonal Mosquitoes',
     description: 'Customer dealing with mosquito problem',
-    prompt: 'Every summer we get bitten by mosquitoes in our backyard. Can you help?',
+    prompt: 'Every summer we get bitten by mosquitoes in our backyard. Can you help? We have a small budget and are price-sensitive. I need to know it will actually work before committing.',
+  },
+  {
+    id: 4,
+    title: 'Friendly New Homeowner',
+    description: 'New homeowner wants preventative care',
+    prompt: 'We just bought a house and want to make sure we don\'t get any pest problems. We\'re willing to invest in good prevention but want to understand what we\'re paying for.',
   },
 ]
 
 export function PracticeSession({ userId, onBack }: PracticeSessionProps) {
-  const [step, setStep] = useState<'scenario' | 'practice' | 'results'>('scenario')
+  const [step, setStep] = useState<'scenario' | 'gpt' | 'transcript' | 'results'>('scenario')
   const [selectedScenario, setSelectedScenario] = useState<(typeof scenarios)[0] | null>(null)
   const [transcript, setTranscript] = useState('')
   const [score, setScore] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+
+  function generateGPTPrompt() {
+    if (!selectedScenario) return ''
+    return `Act as a pest control sales representative. The customer will be: ${selectedScenario.prompt}. 
+
+Your goal is to:
+1. Build rapport and understand their problem
+2. Ask discovery questions about the infestation
+3. Handle their objections professionally
+4. Close the sale or at least get a follow-up meeting
+
+Be natural and conversational. Listen to what they say and respond appropriately.`
+  }
+
+  function copyPrompt() {
+    const prompt = generateGPTPrompt()
+    navigator.clipboard.writeText(prompt)
+  }
+
+  function launchGPTCall() {
+    // Open the ChatGPT custom GPT in a new window for voice conversation
+    window.open(
+      'https://chatgpt.com/g/g-67be87f079888191bfa2e2dcd1e66771-sales-trainer',
+      'gpt_voice',
+      'width=1200,height=800,toolbar=no,location=no'
+    )
+  }
 
   async function handleSubmitTranscript() {
     if (!transcript.trim()) {
@@ -88,7 +121,7 @@ export function PracticeSession({ userId, onBack }: PracticeSessionProps) {
                   key={scenario.id}
                   onClick={() => {
                     setSelectedScenario(scenario)
-                    setStep('practice')
+                    setStep('gpt')
                   }}
                   className="rounded-lg border border-slate-700 bg-slate-900 p-6 text-left hover:border-blue-500 hover:bg-slate-800 transition"
                 >
@@ -100,7 +133,67 @@ export function PracticeSession({ userId, onBack }: PracticeSessionProps) {
           </div>
         )}
 
-        {step === 'practice' && selectedScenario && (
+        {step === 'gpt' && selectedScenario && (
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">{selectedScenario.title}</h1>
+            <p className="text-slate-400 mb-8">{selectedScenario.description}</p>
+            
+            <div className="rounded-lg border border-slate-700 bg-slate-900 p-8 mb-6">
+              <div className="bg-gradient-to-br from-blue-900 to-slate-900 rounded-lg p-8 text-center border border-blue-700/50 mb-6">
+                <h2 className="text-2xl font-bold text-white mb-3">Voice Practice Session</h2>
+                <p className="text-slate-300 mb-6">Use voice chat with the Custom GPT to practice your sales pitch. Click the speaker icon in ChatGPT to enable voice mode.</p>
+                
+                <div className="bg-slate-800/50 rounded-lg p-4 mb-6 text-left">
+                  <p className="text-sm text-slate-400 mb-2">Customer Profile:</p>
+                  <p className="text-white">{selectedScenario.prompt}</p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={copyPrompt}
+                    className="flex-1 rounded-lg border border-blue-500 bg-transparent px-6 py-3 font-semibold text-blue-400 hover:bg-blue-500/10 transition"
+                  >
+                    Copy Scenario
+                  </button>
+                  <button
+                    onClick={launchGPTCall}
+                    className="flex-1 rounded-lg bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700 transition"
+                  >
+                    Start Voice Call
+                  </button>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-700 pt-6">
+                <h3 className="text-lg font-semibold text-white mb-3">Instructions:</h3>
+                <ol className="text-slate-300 space-y-2 list-decimal list-inside">
+                  <li>Click "Start Voice Call" to open ChatGPT</li>
+                  <li>Paste the scenario in the chat</li>
+                  <li>Click the speaker icon to enable voice mode</li>
+                  <li>Have a natural conversation with the customer</li>
+                  <li>After the call, copy the transcript and paste it below to get scored</li>
+                </ol>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStep('scenario')}
+                className="flex-1 rounded bg-slate-700 px-6 py-3 font-medium text-white hover:bg-slate-600"
+              >
+                Back to Scenarios
+              </button>
+              <button
+                onClick={() => setStep('transcript')}
+                className="flex-1 rounded bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700"
+              >
+                Skip to Transcript →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 'transcript' && selectedScenario && (
           <div>
             <h1 className="text-3xl font-bold text-white mb-8">{selectedScenario.title}</h1>
             <div className="rounded-lg border border-slate-700 bg-slate-900 p-6 mb-6">
