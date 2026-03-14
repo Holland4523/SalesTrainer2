@@ -2,7 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 let supabaseInstance: SupabaseClient | null = null
 
-export function getSupabase() {
+export function getSupabase(): SupabaseClient {
   if (supabaseInstance) return supabaseInstance
   
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -16,9 +16,9 @@ export function getSupabase() {
   return supabaseInstance
 }
 
-export const supabase = {
-  get auth() {
-    return getSupabase().auth
+// Use Proxy to lazily initialize while preserving types
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_, prop) {
+    return getSupabase()[prop as keyof SupabaseClient]
   },
-  from: (table: string) => getSupabase().from(table),
-}
+})

@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 
 let serverInstance: SupabaseClient | null = null
 
-function getSupabaseServer() {
+export function getSupabaseServer(): SupabaseClient {
   if (serverInstance) return serverInstance
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -22,12 +22,12 @@ function getSupabaseServer() {
   return serverInstance
 }
 
-export const supabaseServer = {
-  get auth() {
-    return getSupabaseServer().auth
+// Use Proxy to lazily initialize while preserving types
+export const supabaseServer = new Proxy({} as SupabaseClient, {
+  get(_, prop) {
+    return getSupabaseServer()[prop as keyof SupabaseClient]
   },
-  from: (table: string) => getSupabaseServer().from(table),
-}
+})
 
 export async function getServerSession() {
   const cookieStore = await cookies()
