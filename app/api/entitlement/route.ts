@@ -9,9 +9,9 @@ export async function GET(req: NextRequest) {
     }
 
     const token = authHeader.slice(7)
-    const { data: user, error: authError } = await supabaseServer.auth.getUser(token)
+    const { data: userData, error: authError } = await supabaseServer.auth.getUser(token)
 
-    if (authError || !user) {
+    if (authError || !userData?.user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     const { data: subscription, error } = await supabaseServer
       .from('subscriptions')
       .select('tier, status')
-      .eq('user_id', user.id)
+      .eq('user_id', userData.user.id)
       .single()
 
     if (error || !subscription) {
