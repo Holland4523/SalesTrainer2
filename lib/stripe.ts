@@ -1,28 +1,46 @@
 import Stripe from 'stripe'
 
-function getStripe() {
+let stripeInstance: Stripe | null = null
+
+export function getStripe(): Stripe {
+  if (stripeInstance) return stripeInstance
+  
   const apiKey = process.env.STRIPE_SECRET_KEY
   if (!apiKey) {
     throw new Error('Missing STRIPE_SECRET_KEY environment variable')
   }
-  return new Stripe(apiKey)
+  
+  stripeInstance = new Stripe(apiKey)
+  return stripeInstance
 }
 
-export const stripe = {
-  get instance() {
-    return getStripe()
+// Proxy that lazily initializes Stripe
+export const stripe = new Proxy({} as Stripe, {
+  get(_, prop) {
+    return getStripe()[prop as keyof Stripe]
   },
-  customers: {
-    list: (...args: Parameters<Stripe['customers']['list']>) => getStripe().customers.list(...args),
-    create: (...args: Parameters<Stripe['customers']['create']>) => getStripe().customers.create(...args),
-    retrieve: (...args: Parameters<Stripe['customers']['retrieve']>) => getStripe().customers.retrieve(...args),
+})
+
+export const PLANS = {
+  starter: {
+    name: 'Starter',
+    price: 2900,
+    currency: 'usd',
+    interval: 'month',
+    features: ['5 sessions/month', 'Basic scoring', 'Email support'],
   },
-  checkout: {
-    sessions: {
-      create: (...args: Parameters<Stripe['checkout']['sessions']['create']>) => getStripe().checkout.sessions.create(...args),
-    },
+  pro: {
+    name: 'Pro',
+    price: 9900,
+    currency: 'usd',
+    interval: 'month',
+    features: ['Unlimited sessions', 'Advanced analytics', 'Priority support', 'Team leaderboard'],
   },
-  webhooks: {
-    constructEvent: (payload: string, sig: string, secret: string) => getStripe().webhooks.constructEvent(payload, sig, secret),
+  team: {
+    name: 'Team',
+    price: 29900,
+    currency: 'usd',
+    interval: 'month',
+    features: ['Unlimited everything', '5 team seats', 'Manager dashboard', 'Custom scenarios'],
   },
 }

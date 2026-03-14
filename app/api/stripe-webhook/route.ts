@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { supabaseServer } from '@/lib/supabase-server'
 
 export async function POST(req: NextRequest) {
@@ -16,9 +16,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
     }
 
+    const stripeClient = getStripe()
+    
     let event
     try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+      event = stripeClient.webhooks.constructEvent(body, signature, webhookSecret)
     } catch (error) {
       console.error('Webhook signature verification failed:', error)
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
@@ -28,8 +30,11 @@ export async function POST(req: NextRequest) {
     if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated') {
       const subscription = event.data.object as any
 
-      const { data: customer } = await stripe.customers.retrieve(subscription.customer as string)
-      const email = (customer as any).email
+      const customer = await stripeClient.customers.retrieve(subscription.customer as string)
+      if (customer.deleted) {
+        return NextResponse.json({ error: 'Customer deleted' }, { status: 400 })
+      }
+      const email = customer.email
 
       if (!email) {
         console.error('No email found for customer')
