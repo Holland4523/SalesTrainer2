@@ -7,6 +7,16 @@ import { DefaultChatTransport } from 'ai'
 const MASTER_EMAIL = 'dutchpeil@gmail.com'
 const MASTER_PASSWORD = 'Holland126'
 
+interface ScoreResult {
+  overall_score: number
+  rapport: number
+  discovery: number
+  objection_handling: number
+  closing_strength: number
+  coaching_summary: string
+  improvements: string[]
+}
+
 export default function SalesTrainer() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [email, setEmail] = useState('')
@@ -14,6 +24,9 @@ export default function SalesTrainer() {
   const [loginError, setLoginError] = useState('')
   const [inRoleplay, setInRoleplay] = useState(false)
   const [input, setInput] = useState('')
+  const [scoreResult, setScoreResult] = useState<ScoreResult | null>(null)
+  const [isScoring, setIsScoring] = useState(false)
+  const [copied, setCopied] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const { messages, sendMessage, status, setMessages } = useChat({
@@ -27,10 +40,10 @@ export default function SalesTrainer() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Login handler - master account only
+  // Login handler - master account only (case-insensitive email)
   function handleLogin(e: React.FormEvent) {
     e.preventDefault()
-    if (email === MASTER_EMAIL && password === MASTER_PASSWORD) {
+    if (email.toLowerCase().trim() === MASTER_EMAIL.toLowerCase() && password === MASTER_PASSWORD) {
       setIsLoggedIn(true)
       setLoginError('')
     } else {
@@ -41,6 +54,7 @@ export default function SalesTrainer() {
   // Start roleplay
   function startRoleplay() {
     setMessages([])
+    setScoreResult(null)
     setInRoleplay(true)
   }
 
@@ -60,13 +74,16 @@ export default function SalesTrainer() {
   // Copy transcript
   function copyTranscript() {
     navigator.clipboard.writeText(getTranscript())
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   // Score transcript
   async function scoreTranscript() {
     const transcript = getTranscript()
-    if (!transcript) return
+    if (!transcript || isScoring) return
     
+    setIsScoring(true)
     try {
       const res = await fetch('/api/score', {
         method: 'POST',
@@ -74,9 +91,12 @@ export default function SalesTrainer() {
         body: JSON.stringify({ transcript })
       })
       const data = await res.json()
-      alert(`Score: ${data.overall_score}/100\n\n${data.coaching_summary}`)
-    } catch {
-      alert('Scoring failed')
+      if (data.error) throw new Error(data.error)
+      setScoreResult(data)
+    } catch (err) {
+      console.error('Scoring failed:', err)
+    } finally {
+      setIsScoring(false)
     }
   }
 
@@ -94,6 +114,7 @@ export default function SalesTrainer() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="Email"
+              autoComplete="email"
               className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
             />
             <input
@@ -101,6 +122,7 @@ export default function SalesTrainer() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="Password"
+              autoComplete="current-password"
               className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
             />
             {loginError && <p className="text-red-400 text-sm">{loginError}</p>}
@@ -111,6 +133,10 @@ export default function SalesTrainer() {
               Sign In
             </button>
           </form>
+          
+          <p className="text-slate-600 text-xs text-center mt-6">
+            Hint: dutchpeil@gmail.com
+          </p>
         </div>
       </div>
     )
@@ -204,40 +230,101 @@ export default function SalesTrainer() {
     )
   }
 
-  // HOME SCREEN (after roleplay ended, show transcript)
+  // HOME SCREEN (after roleplay ended, show transcript and score)
   if (messages.length > 0) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-2xl">
-          <h1 className="text-3xl font-bold text-white text-center mb-2">Session Complete</h1>
-          <p className="text-slate-400 text-center mb-8">Your conversation transcript</p>
+      <div className="min-h-screen bg-slate-950 p-4 overflow-y-auto">
+        <div className="w-full max-w-2xl mx-auto py-8">
+          <h1 className="text-3xl font-bold text-white text-center mb-8">Session Complete</h1>
           
-          <div className="bg-slate-900 rounded-lg p-4 mb-6 max-h-96 overflow-y-auto">
-            <pre className="text-slate-300 text-sm whitespace-pre-wrap font-mono">
-              {getTranscript()}
-            </pre>
+          {/* Score Card */}
+          {scoreResult && (
+            <div className="bg-slate-900 rounded-xl p-6 mb-6 border border-slate-700">
+              <div className="text-center mb-6">
+                <div className="text-6xl font-bold text-white mb-2">{scoreResult.overall_score}</div>
+                <div className="text-slate-400">Overall Score</div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-slate-800 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-blue-400">{scoreResult.rapport}</div>
+                  <div className="text-xs text-slate-400">Rapport</div>
+                </div>
+                <div className="bg-slate-800 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-green-400">{scoreResult.discovery}</div>
+                  <div className="text-xs text-slate-400">Discovery</div>
+                </div>
+                <div className="bg-slate-800 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-yellow-400">{scoreResult.objection_handling}</div>
+                  <div className="text-xs text-slate-400">Objections</div>
+                </div>
+                <div className="bg-slate-800 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-purple-400">{scoreResult.closing_strength}</div>
+                  <div className="text-xs text-slate-400">Closing</div>
+                </div>
+              </div>
+              
+              <div className="bg-slate-800 rounded-lg p-4 mb-4">
+                <h3 className="font-semibold text-white mb-2">Coaching Summary</h3>
+                <p className="text-slate-300 text-sm">{scoreResult.coaching_summary}</p>
+              </div>
+              
+              {scoreResult.improvements.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-white mb-2">Areas to Improve</h3>
+                  <ul className="space-y-1">
+                    {scoreResult.improvements.map((tip, i) => (
+                      <li key={i} className="text-slate-300 text-sm flex items-start gap-2">
+                        <span className="text-blue-400">-</span> {tip}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Transcript */}
+          <div className="bg-slate-900 rounded-xl p-4 mb-6 border border-slate-700">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold text-white">Transcript</h2>
+              <button
+                onClick={copyTranscript}
+                className="text-sm text-blue-400 hover:text-blue-300"
+              >
+                {copied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <div className="max-h-64 overflow-y-auto">
+              <pre className="text-slate-300 text-sm whitespace-pre-wrap font-mono">
+                {getTranscript()}
+              </pre>
+            </div>
           </div>
           
-          <div className="flex gap-3 mb-4">
-            <button
-              onClick={copyTranscript}
-              className="flex-1 py-3 rounded-lg border border-slate-600 text-white font-medium hover:bg-slate-800 transition"
-            >
-              Copy Transcript
-            </button>
+          {/* Actions */}
+          {!scoreResult && (
             <button
               onClick={scoreTranscript}
-              className="flex-1 py-3 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-500 transition"
+              disabled={isScoring}
+              className="w-full py-3 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition mb-3"
             >
-              Get Score
+              {isScoring ? 'Scoring...' : 'Get AI Score'}
             </button>
-          </div>
+          )}
           
           <button
-            onClick={() => { setMessages([]); setInRoleplay(true) }}
+            onClick={startRoleplay}
             className="w-full py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-500 transition"
           >
             Start New Roleplay
+          </button>
+          
+          <button
+            onClick={() => { setMessages([]); setScoreResult(null) }}
+            className="block mx-auto mt-4 text-slate-500 text-sm hover:text-slate-400"
+          >
+            Back to Home
           </button>
         </div>
       </div>
