@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PestPros AI Sales Trainer</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --bg:#07090f; --surface:#0f1520; --card:#141e2e; --line:rgba(255,255,255,.08);
+      --text:#eff6ff; --muted:rgba(239,246,255,.68); --faint:rgba(239,246,255,.32);
+      --amber:#f59e0b; --blue:#3b82f6; --green:#10b981; --red:#ef4444;
+      --amberBg:rgba(245,158,11,.12); --blueBg:rgba(59,130,246,.12); --greenBg:rgba(16,185,129,.12); --redBg:rgba(239,68,68,.12);
+      --radius:16px;
+    }
+    *{box-sizing:border-box} html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    button,input,select,textarea{font:inherit}
+    a{color:inherit}
+    .app{min-height:100vh;display:flex}
+    .sidebar{width:240px;background:var(--surface);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:14px}
+    .brand{padding:14px;border-radius:18px;background:linear-gradient(180deg,#141e2e,#0f1520);border:1px solid var(--line)}
+    .brand h1{font-size:18px;line-height:1.1;margin:0 0 6px;font-weight:800;letter-spacing:.01em}
+    .brand p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+    .nav{display:flex;flex-direction:column;gap:8px}
+    .nav button{width:100%;text-align:left;padding:11px 12px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer}
+    .nav button.active,.nav button:hover{background:var(--card);border-color:var(--line);color:var(--text)}
+    .footer-box{margin-top:auto;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card);font-size:12px;color:var(--muted);line-height:1.5}
+    .main{flex:1;padding:28px;max-width:1200px;width:100%;margin:0 auto}
+    .topbar{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:22px;flex-wrap:wrap}
+    .title h2{margin:0;font-size:28px;line-height:1.1}.title p{margin:8px 0 0;color:var(--muted)}
+    .grid{display:grid;gap:16px}.grid.cards{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .grid.two{grid-template-columns:1.15fr .85fr}.grid.equal{grid-template-columns:1fr 1fr}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+    .card h3{margin:0 0 12px;font-size:15px}.label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--faint);font-weight:700}
+    .stat{font-size:34px;font-weight:800;line-height:1;margin-top:8px}.muted{color:var(--muted)} .faint{color:var(--faint)}
+    .btn{border:none;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer}
+    .btn.primary{background:var(--amber);color:#000}.btn.secondary{background:transparent;color:var(--text);border:1px solid var(--line)}
+    .btn.small{padding:8px 12px;border-radius:10px;font-size:13px}.btn:disabled{opacity:.45;cursor:not-allowed}
+    .pill{display:inline-flex;gap:6px;align-items:center;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+    .pill.green{background:var(--greenBg);color:var(--green)} .pill.red{background:var(--redBg);color:var(--red)} .pill.amber{background:var(--amberBg);color:var(--amber)} .pill.blue{background:var(--blueBg);color:var(--blue)}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+    .progress{height:8px;background:var(--surface);border-radius:999px;overflow:hidden}.progress>div{height:100%;border-radius:999px}
+    .table{width:100%;border-collapse:collapse}.table th,.table td{padding:12px 10px;border-top:1px solid var(--line);font-size:14px;text-align:left}.table th{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.12em}
+    .select,input[type=email],input[type=password],input[type=text],textarea{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;color:var(--text);padding:12px 13px;outline:none}
+    textarea{min-height:90px;resize:vertical}
+    .session-shell{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+    .messages{height:480px;overflow:auto;padding-right:4px;display:flex;flex-direction:column;gap:12px}
+    .bubble-wrap{display:flex;gap:10px}.bubble-wrap.rep{justify-content:flex-end}.bubble{max-width:74%;padding:12px 14px;border-radius:16px;line-height:1.55;font-size:14px;border:1px solid var(--line);background:var(--surface)} .bubble-wrap.rep .bubble{background:var(--blueBg);border-color:rgba(59,130,246,.35)}
+    .avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 30px;background:var(--surface);border:1px solid var(--line);font-size:12px;font-weight:800}
+    .controls{display:flex;gap:10px;flex-wrap:wrap}.mic{width:84px;height:84px;border-radius:50%;border:none;background:var(--amber);color:#000;font-size:28px;font-weight:800;cursor:pointer;box-shadow:0 0 0 0 rgba(245,158,11,.35)}
+    .mic.recording{background:var(--red);color:#fff;animation:pulse 1.25s infinite}.mic.busy{background:#1c2840;color:var(--text);cursor:not-allowed}
+    @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}70%{box-shadow:0 0 0 18px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+    .kpi{padding:14px 16px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+    .auth-wrap{max-width:520px;margin:60px auto}.auth-wrap .card{padding:22px}
+    .plan-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+    .scenario-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.scenario{cursor:pointer;padding:13px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}.scenario.active{border-color:rgba(245,158,11,.45);background:var(--amberBg)}
+    .diff-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.diff{cursor:pointer;padding:12px;text-align:center;border-radius:14px;background:var(--surface);border:1px solid var(--line)}.diff.active{border-color:rgba(245,158,11,.45);background:var(--amberBg)}
+    .hidden{display:none!important}
+    @media (max-width: 980px){.app{display:block}.sidebar{width:auto;border-right:none;border-bottom:1px solid var(--line)}.grid.cards,.grid.two,.grid.equal,.session-shell,.plan-grid{grid-template-columns:1fr}.main{padding:18px}.messages{height:360px}}
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+  const ENV = {
+    OPENAI_API_KEY: "__OPENAI_API_KEY__",
+    SUPABASE_URL: "__NEXT_PUBLIC_SUPABASE_URL__",
+    SUPABASE_ANON_KEY: "__NEXT_PUBLIC_SUPABASE_ANON_KEY__",
+    ADMIN_EMAIL: "__ADMIN_EMAIL__",
+    STRIPE_STARTER_LINK: "__NEXT_PUBLIC_STRIPE_STARTER_LINK__",
+    STRIPE_PRO_LINK: "__NEXT_PUBLIC_STRIPE_PRO_LINK__",
+    STRIPE_TEAM_LINK: "__NEXT_PUBLIC_STRIPE_TEAM_LINK__"
+  };
+
+  const READY = {
+    hasOpenAI: ENV.OPENAI_API_KEY && !ENV.OPENAI_API_KEY.includes("__") && ENV.OPENAI_API_KEY.startsWith("sk-"),
+    hasSupabase: ENV.SUPABASE_URL && ENV.SUPABASE_ANON_KEY && !ENV.SUPABASE_URL.includes("__") && !ENV.SUPABASE_ANON_KEY.includes("__")
+  };
+
+  const S = {
+    green:'#10b981', amber:'#f59e0b', red:'#ef4444', blue:'#3b82f6'
+  };
+  const APP_KEY = 'pestpros_onefile_v1';
+
+  const SCENARIOS = [
+    {id:1,label:'Skeptical Homeowner',personality:'skeptical',pest:'ants',season:'spring',competitor:'Terminix'},
+    {id:2,label:'Friendly but Hesitant',personality:'friendly',pest:'spiders',season:'summer',competitor:'none'},
+    {id:3,label:'Busy / Time-Pressured',personality:'busy',pest:'rodents',season:'fall',competitor:'Orkin'},
+    {id:4,label:'Budget-Conscious',personality:'frugal',pest:'mosquitoes',season:'spring',competitor:'none'}
+  ];
+  const DIFFS = [
+    {level:1,tag:'Easy',desc:'Patient homeowner. Good warm-up reps.'},
+    {level:2,tag:'Med',desc:'Normal resistance. Real-world pacing.'},
+    {level:3,tag:'Hard',desc:'Skeptical. Strong value framing needed.'},
+    {level:4,tag:'Elite',desc:'Guarded and abrupt. Weak openers fail fast.'}
+  ];
+  const ROLE_LABELS = {rep:'Rep', manager:'Manager', admin:'Admin'};
+
+  const state = {
+    view:'dashboard',
+    role:'rep',
+    authMode:'signin',
+    authReady:false,
+    user:null,
+    profile:{plan:'free', sessions_used:0, sessions_limit:5},
+    sessionConfig:{scenarioId:1,diff:2,maxTurns:8},
+    currentSession:null,
+    lastScore:null,
+    loading:false,
+    authEmail:'',
+    authPassword:'',
+    statusMessage:'',
+    saving:false,
+    supabase:null,
+    team:[
+      {name:'Holland Carter',score:71,diff:2,sessions:3,trend:7},
+      {name:'Marcus Webb',score:84,diff:3,sessions:5,trend:12},
+      {name:'Priya Nambiar',score:61,diff:2,sessions:2,trend:-3},
+      {name:'DeShawn Torres',score:48,diff:1,sessions:0,trend:-8},
+      {name:'Caitlin Fosse',score:77,diff:3,sessions:4,trend:5}
+    ]
+  };
+
+  function persist(){
+    const safe = {lastScore:state.lastScore, profile:state.profile};
+    localStorage.setItem(APP_KEY, JSON.stringify(safe));
+  }
+  function restore(){
+    try{ const x = JSON.parse(localStorage.getItem(APP_KEY)||'{}'); if(x.lastScore) state.lastScore=x.lastScore; if(x.profile) state.profile={...state.profile,...x.profile}; }catch{}
+  }
+
+  function grade(v){ return v>=80?'Elite':v>=70?'Strong':v>=55?'Developing':'Needs Work'; }
+  function color(v){ return v>=80?S.green:v>=60?S.amber:S.red; }
+  function esc(s){ return String(s??'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function scenario(){ return SCENARIOS.find(x=>x.id===state.sessionConfig.scenarioId) || SCENARIOS[0]; }
+  function diffMeta(){ return DIFFS.find(x=>x.level===state.sessionConfig.diff) || DIFFS[1]; }
+  function isAdmin(){ return !!state.user && !!ENV.ADMIN_EMAIL && state.user.email && state.user.email.toLowerCase()===ENV.ADMIN_EMAIL.toLowerCase(); }
+  function sessionCap(){ return isAdmin() ? Infinity : (state.profile.sessions_limit || 5); }
+  function sessionRemaining(){ const cap=sessionCap(); return cap===Infinity ? Infinity : Math.max(0, cap - (state.profile.sessions_used || 0)); }
+  function paymentLink(plan){ return plan==='starter'?ENV.STRIPE_STARTER_LINK:plan==='pro'?ENV.STRIPE_PRO_LINK:ENV.STRIPE_TEAM_LINK; }
+
+  function buildPrompt(scn,diff){
+    const tones = [
+      'Be patient and fairly open.',
+      'Be mildly skeptical. Push back on price and convenience.',
+      'Be clearly skeptical. Force the rep to establish value before warming up.',
+      'Be guarded and difficult. If the rep is weak early, end the conversation quickly.'
+    ];
+    return `You are a homeowner answering your front door to a door-to-door pest control rep. Context: It is ${scn.season}. You have a ${scn.pest} issue. ${scn.competitor!=='none' ? `You currently use ${scn.competitor} but are not fully satisfied.` : 'You do not currently have a pest service.'} Personality: ${scn.personality}. ${tones[diff-1]} Rules: Stay fully in character. Keep replies 1-3 sentences. Sound natural. Mention real homeowner concerns like price, trust, kids, pets, scheduling, contracts, or prior bad experiences when relevant. Opening line should match your personality.`;
+  }
+
+  async function callOpenAIChat(messages, opts={}){
+    const res = await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+ENV.OPENAI_API_KEY},
+      body:JSON.stringify({model:'gpt-4o-mini',messages,temperature:opts.temperature ?? 0.85,max_tokens:opts.max_tokens ?? 180})
+    });
+    if(!res.ok){
+      let err='OpenAI error';
+      try{ const j=await res.json(); err=j.error?.message||err; }catch{}
+      throw new Error(err);
+    }
+    const j = await res.json();
+    return j.choices?.[0]?.message?.content?.trim() || '';
+  }
+
+  async function transcribeAudio(blob){
+    const fd = new FormData();
+    fd.append('file', blob, 'audio.webm');
+    fd.append('model','whisper-1');
+    fd.append('language','en');
+    const res = await fetch('https://api.openai.com/v1/audio/transcriptions',{
+      method:'POST', headers:{'Authorization':'Bearer '+ENV.OPENAI_API_KEY}, body:fd
+    });
+    if(!res.ok){
+      let err='Transcription failed';
+      try{ const j=await res.json(); err=j.error?.message||err; }catch{}
+      throw new Error(err);
+    }
+    const j = await res.json();
+    return (j.text || '').trim();
+  }
+
+  async function speakText(text){
+    const res = await fetch('https://api.openai.com/v1/audio/speech',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+ENV.OPENAI_API_KEY},
+      body:JSON.stringify({model:'tts-1',voice:'alloy',input:text,speed:1})
+    });
+    if(!res.ok) throw new Error('Speech generation failed');
+    const blob = new Blob([await res.arrayBuffer()],{type:'audio/mpeg'});
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    return new Promise((resolve)=>{
+      audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
+      audio.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+      audio.play().catch(()=>{ URL.revokeObjectURL(url); resolve(); });
+      state.currentSession.audio = audio;
+    });
+  }
+
+  async function scoreConversation(history, scn, diff){
+    const transcript = history.map((m,i)=>`[${i}] ${m.role==='user'?'REP':'HOMEOWNER'}: ${m.content}`).join('\n');
+    const raw = await callOpenAIChat([
+      {role:'system',content:'You are a world-class door-to-door sales evaluator. Return ONLY valid JSON. Schema: {"opener":0-100,"tonality":0-100,"discovery":0-100,"objections":0-100,"closing":0-100,"resilience":0-100,"outcome":"close_attempted|no_close|abandoned","notes":"2-4 sentences of concrete coaching","strengths":["...","..."],"improvements":["...","..."]}.'},
+      {role:'user',content:`Scenario: ${scn.label}. Difficulty: ${diff}.\n\n${transcript}`}
+    ], {temperature:.25, max_tokens:260});
+    try{
+      const j = JSON.parse(raw.replace(/```json|```/g,''));
+      return j;
+    } catch {
+      return {opener:64,tonality:68,discovery:61,objections:62,closing:57,resilience:67,outcome:'no_close',notes:'The session ran, but the score parser failed. The rep showed decent persistence but needs tighter value framing and a clearer close.',strengths:['Good energy','Decent persistence'],improvements:['Ask deeper discovery questions','Move to close earlier']};
+    }
+  }
+
+  async function initSupabase(){
+    if(!READY.hasSupabase || !window.supabase) return;
+    state.supabase = window.supabase.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY, {auth:{persistSession:true,autoRefreshToken:true}});
+    const { data } = await state.supabase.auth.getSession();
+    state.user = data?.session?.user || null;
+    state.authReady = true;
+    if(state.user) await loadProfile();
+    state.supabase.auth.onAuthStateChange(async (_evt, session)=>{
+      state.user = session?.user || null;
+      if(state.user) await loadProfile();
+      render();
+    });
+  }
+
+  async function loadProfile(){
+    if(!state.supabase || !state.user) return;
+    try {
+      const { data, error } = await state.supabase.from('profiles').select('*').eq('id', state.user.id).maybeSingle();
+      if(error && !String(error.message||'').toLowerCase().includes('does not exist')) throw error;
+      if(data){
+        state.profile = {
+          plan: data.plan || state.profile.plan,
+          sessions_used: Number(data.sessions_used || 0),
+          sessions_limit: Number(data.sessions_limit || state.profile.sessions_limit || 5)
+        };
+      } else {
+        await ensureProfile();
+      }
+    } catch {
+      await ensureProfile();
+    }
+    persist();
+  }
+
+  async function ensureProfile(){
+    if(!state.supabase || !state.user) return;
+    const payload = {
+      id: state.user.id,
+      email: state.user.email,
+      plan: isAdmin() ? 'admin' : (state.profile.plan || 'free'),
+      sessions_used: Number(state.profile.sessions_used || 0),
+      sessions_limit: isAdmin() ? 999999 : Number(state.profile.sessions_limit || 5),
+      updated_at: new Date().toISOString()
+    };
+    try{ await state.supabase.from('profiles').upsert(payload); }catch{}
+  }
+
+  async function bumpSessionUsage(){
+    if(isAdmin()) return;
+    state.profile.sessions_used = Number(state.profile.sessions_used || 0) + 1;
+    persist();
+    if(!state.supabase || !state.user) return;
+    try {
+      await state.supabase.from('profiles').upsert({
+        id: state.user.id,
+        email: state.user.email,
+        plan: state.profile.plan || 'free',
+        sessions_used: state.profile.sessions_used,
+        sessions_limit: state.profile.sessions_limit || 5,
+        updated_at: new Date().toISOString()
+      });
+    } catch {}
+  }
+
+  async function saveSessionRecord(){
+    if(!state.supabase || !state.user || !state.lastScore) return;
+    const r = state.lastScore;
+    try {
+      await state.supabase.from('sessions').insert({
+        user_id: state.user.id,
+        email: state.user.email,
+        score: r.readiness,
+        difficulty: r.diff,
+        scenario: r.scenario,
+        outcome: r.outcome,
+        transcript: r.messages,
+        notes: r.notes,
+        created_at: new Date().toISOString()
+      });
+    } catch {}
+  }
+
+  async function signInOrUp(){
+    if(!state.supabase){ state.statusMessage='Supabase is not configured yet.'; render(); return; }
+    const email = state.authEmail.trim();
+    const password = state.authPassword;
+    if(!email || !password || password.length < 6){ state.statusMessage='Use a valid email and a password with at least 6 characters.'; render(); return; }
+    state.loading = true; state.statusMessage=''; render();
+    try{
+      if(state.authMode==='signin'){
+        const { error } = await state.supabase.auth.signInWithPassword({email,password});
+        if(error) throw error;
+        state.statusMessage='Signed in.';
+      } else {
+        const { error } = await state.supabase.auth.signUp({email,password});
+        if(error) throw error;
+        state.statusMessage='Account created. If email confirmation is on, verify then sign in.';
+      }
+      await loadProfile();
+    } catch(e){ state.statusMessage = e.message || 'Auth failed.'; }
+    state.loading = false; render();
+  }
+
+  async function signOut(){ if(state.supabase) await state.supabase.auth.signOut(); state.user=null; render(); }
+
+  function startCheckout(plan){
+    const link = paymentLink(plan);
+    if(!link || link.includes('__')){ alert('Add your Stripe Checkout Link for this plan first.'); return; }
+    window.location.href = link;
+  }
+
+  function newSessionState(){
+    const scn = scenario();
+    const openingMap = {
+      skeptical:'Can I help you? I am not really looking to buy anything right now.',
+      friendly:'Hi there. What can I do for you?',
+      busy:'Yeah? Make it quick — I am in the middle of something.',
+      frugal:'Hi. Just so you know, I am careful with spending.'
+    };
+    return {
+      phase:'speaking',
+      status:'Homeowner speaking…',
+      turns:0,
+      maxTurns:state.sessionConfig.maxTurns,
+      scenario:scn,
+      diff:state.sessionConfig.diff,
+      history:[{role:'assistant',content:openingMap[scn.personality] || 'Hi, what can I do for you?'}],
+      messages:[{speaker:'ai',text:openingMap[scn.personality] || 'Hi, what can I do for you?'}],
+      mediaRecorder:null,
+      chunks:[],
+      audio:null,
+      error:'',
+      done:false
+    };
+  }
+
+  async function launchSession(){
+    if(!READY.hasOpenAI){ alert('Add OPENAI_API_KEY first.'); return; }
+    if(!state.user){ state.view='auth'; render(); return; }
+    if(sessionRemaining()<=0){ alert('You are out of sessions for your plan. Upgrade to continue.'); state.view='plans'; render(); return; }
+    state.currentSession = newSessionState();
+    state.view='session';
+    render();
+    const line = state.currentSession.history[0].content;
+    try{ await speakText(line); }catch{}
+    if(state.currentSession){ state.currentSession.phase='idle'; state.currentSession.status='Hold to speak'; render(); }
+  }
+
+  async function startRecording(){
+    const ss = state.currentSession; if(!ss || ss.phase!=='idle') return;
+    try{
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      const type = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+      ss.chunks = [];
+      ss.mediaRecorder = new MediaRecorder(stream, type ? {mimeType:type}:undefined);
+      ss.mediaRecorder.ondataavailable = e => { if(e.data.size>0) ss.chunks.push(e.data); };
+      ss.mediaRecorder.start(120);
+      ss.phase='recording'; ss.status='Recording… release to send'; ss.error=''; render();
+    }catch(e){ ss.error='Mic access failed: '+e.message; render(); }
+  }
+
+  async function stopRecording(){
+    const ss = state.currentSession; if(!ss || ss.phase!=='recording' || !ss.mediaRecorder) return;
+    await new Promise(resolve=>{
+      ss.mediaRecorder.onstop = resolve;
+      ss.mediaRecorder.stop();
+      ss.mediaRecorder.stream.getTracks().forEach(t=>t.stop());
+    });
+    const blob = new Blob(ss.chunks, {type:'audio/webm'});
+    if(blob.size < 900){ ss.phase='idle'; ss.status='Hold to speak'; render(); return; }
+    ss.phase='transcribing'; ss.status='Transcribing…'; render();
+    try{
+      const text = await transcribeAudio(blob);
+      if(!text){ ss.phase='idle'; ss.status='Hold to speak'; render(); return; }
+      ss.messages.push({speaker:'rep', text});
+      ss.history.push({role:'user', content:text});
+      render();
+      await advanceSession();
+    } catch(e){ ss.error=e.message || 'Transcription error'; ss.phase='idle'; ss.status='Hold to speak'; render(); }
+  }
+
+  async function advanceSession(){
+    const ss = state.currentSession; if(!ss) return;
+    ss.turns += 1;
+    if(ss.turns >= ss.maxTurns){ await finishSession(); return; }
+    ss.phase='thinking'; ss.status='Homeowner thinking…'; render();
+    try{
+      const reply = await callOpenAIChat([{role:'system',content:buildPrompt(ss.scenario, ss.diff)}, ...ss.history], {temperature:.9, max_tokens:120});
+      ss.history.push({role:'assistant', content:reply});
+      ss.messages.push({speaker:'ai', text:reply});
+      ss.phase='speaking'; ss.status='Homeowner speaking…'; render();
+      await speakText(reply);
+      if(!state.currentSession) return;
+      if(ss.diff>=3 && /(not interested|goodbye|please leave|no thank you|have a good day)/i.test(reply)){ await finishSession(); return; }
+      ss.phase='idle'; ss.status='Hold to speak'; render();
+    } catch(e){ ss.error=e.message || 'Model error'; ss.phase='idle'; ss.status='Hold to speak'; render(); }
+  }
+
+  async function finishSession(){
+    const ss = state.currentSession; if(!ss) return;
+    if(ss.audio) try{ ss.audio.pause(); }catch{}
+    ss.phase='scoring'; ss.status='Scoring session…'; render();
+    try{
+      const scored = await scoreConversation(ss.history, ss.scenario, ss.diff);
+      const weights = { opener:.22, tonality:.18, discovery:.15, objections:.25, closing:.10, resilience:.10 };
+      const raw = Object.keys(weights).reduce((a,k)=>a + (Number(scored[k]||60) * weights[k]), 0);
+      const readiness = Math.min(100, Math.round(raw * [1,1.04,1.08,1.12][ss.diff-1]));
+      state.lastScore = {
+        readiness,
+        diff:ss.diff,
+        scenario:ss.scenario.label,
+        outcome:scored.outcome || 'no_close',
+        notes:scored.notes || 'Session completed.',
+        strengths:Array.isArray(scored.strengths)?scored.strengths:[],
+        improvements:Array.isArray(scored.improvements)?scored.improvements:[],
+        dims:{ opener:Number(scored.opener||60), tonality:Number(scored.tonality||60), discovery:Number(scored.discovery||55), objections:Number(scored.objections||58), closing:Number(scored.closing||52), resilience:Number(scored.resilience||62) },
+        messages:ss.messages,
+        created_at:new Date().toISOString()
+      };
+      await bumpSessionUsage();
+      await saveSessionRecord();
+      persist();
+    } catch(e){
+      state.lastScore = { readiness:61,diff:ss.diff,scenario:ss.scenario.label,outcome:'no_close',notes:'Scoring failed, but the session itself ran. Check your OpenAI key and try again.',strengths:[],improvements:[],dims:{opener:60,tonality:60,discovery:55,objections:58,closing:52,resilience:62},messages:ss.messages,created_at:new Date().toISOString() };
+      persist();
+    }
+    state.currentSession = null;
+    state.view='results';
+    render();
+  }
+
+  function endSessionEarly(){ if(state.currentSession) finishSession(); }
+  function skipAudio(){ try{ state.currentSession?.audio?.pause(); }catch{} if(state.currentSession && state.currentSession.phase==='speaking'){ state.currentSession.phase='idle'; state.currentSession.status='Hold to speak'; render(); } }
+
+  function sidebar(){
+    const tabs = [
+      ['dashboard','Dashboard'],
+      ['train','Start Session'],
+      ['results','Last Results'],
+      ['plans','Plans'],
+      [isAdmin()?'admin':'team', isAdmin()?'Admin':'Team']
+    ];
+    return `<aside class="sidebar">
+      <div class="brand"><h1>PestPros AI Trainer</h1><p>Single-file deploy. Static Vercel. OpenAI + Supabase + Stripe Links.</p></div>
+      <div class="nav">${tabs.map(([id,label])=>`<button class="${state.view===id?'active':''}" onclick="App.go('${id}')">${label}</button>`).join('')}</div>
+      <div class="footer-box">
+        <div><strong>Env status</strong></div>
+        <div>OpenAI: ${READY.hasOpenAI ? 'ready' : 'missing'}</div>
+        <div>Supabase: ${READY.hasSupabase ? 'ready' : 'optional / missing'}</div>
+        <div>Signed in: ${state.user ? esc(state.user.email) : 'no'}</div>
+      </div>
+    </aside>`;
+  }
+
+  function dashboardView(){
+    const r = state.lastScore;
+    const score = r?.readiness ?? 0;
+    const used = Number(state.profile.sessions_used||0);
+    const remaining = sessionRemaining();
+    return `<div>
+      <div class="topbar"><div class="title"><h2>Performance Center</h2><p>Fast, stable MVP deployment with no backend routes required.</p></div><div class="row">${state.user?`<span class="pill blue">${esc(ROLE_LABELS[state.role])}</span><span class="pill ${isAdmin()?'green':'amber'}">${isAdmin()?'Admin Access':esc((state.profile.plan||'free').toUpperCase())}</span>`:'<span class="pill red">Not signed in</span>'}<button class="btn primary" onclick="App.launchSession()">Start Live Session</button></div></div>
+      <div class="grid cards">
+        <div class="kpi"><div class="label">Last Readiness</div><div class="stat" style="color:${color(score)}">${score || '—'}</div><div class="muted">${r ? grade(score) : 'No session yet'}</div></div>
+        <div class="kpi"><div class="label">Plan</div><div class="stat">${isAdmin()?'ADMIN':esc((state.profile.plan||'free').toUpperCase())}</div><div class="muted">${isAdmin()?'Unlimited use':'Billing via Stripe checkout links'}</div></div>
+        <div class="kpi"><div class="label">Sessions Used</div><div class="stat">${used}</div><div class="muted">${isAdmin()?'Unlimited account':'Tracked locally and in Supabase if configured'}</div></div>
+        <div class="kpi"><div class="label">Sessions Remaining</div><div class="stat">${remaining===Infinity?'∞':remaining}</div><div class="muted">${remaining===Infinity?'No cap':'Upgrade when you hit zero'}</div></div>
+      </div>
+      <div class="grid two" style="margin-top:16px">
+        <div class="card"><div class="row between"><h3>Latest score breakdown</h3>${r?`<span class="pill ${score>=80?'green':score>=60?'amber':'red'}">${grade(score)}</span>`:''}</div>
+          ${r?Object.entries(r.dims).map(([k,v])=>`<div style="margin-bottom:12px"><div class="row between" style="margin-bottom:5px"><div>${esc(k[0].toUpperCase()+k.slice(1))}</div><div style="font-weight:800;color:${color(v)}">${v}</div></div><div class="progress"><div style="width:${v}%;background:${color(v)}"></div></div></div>`).join(''):'<div class="muted">Complete one live rep simulation to see detailed scoring.</div>'}
+        </div>
+        <div class="card"><h3>Deployment truth</h3><div class="muted" style="line-height:1.65">This version avoids the most common Vercel failures because it does not depend on Next.js server routes, Stripe webhooks, or a Supabase service-role key in the browser. Your uploaded app already makes browser-side calls directly to OpenAI, including chat, Whisper, and TTS, which is why a pure static deployment is workable here. fileciteturn1file1 fileciteturn1file2</div><div style="height:12px"></div><button class="btn secondary small" onclick="App.go('plans')">Open plans</button></div>
+      </div>
+    </div>`;
+  }
+
+  function authView(){
+    return `<div class="auth-wrap"><div class="card"><div class="row between"><div><div class="label">Authentication</div><h3 style="font-size:26px;margin-top:8px">Sign ${state.authMode==='signin'?'in':'up'}</h3></div><button class="btn secondary small" onclick="App.toggleAuthMode()">Switch to ${state.authMode==='signin'?'sign up':'sign in'}</button></div><div style="height:10px"></div><input type="email" placeholder="Email" value="${esc(state.authEmail)}" oninput="App.set('authEmail',this.value)"><div style="height:10px"></div><input type="password" placeholder="Password" value="${esc(state.authPassword)}" oninput="App.set('authPassword',this.value)"><div style="height:12px"></div><button class="btn primary" style="width:100%" onclick="App.signInOrUp()" ${state.loading?'disabled':''}>${state.loading?'Working…':state.authMode==='signin'?'Sign In':'Create Account'}</button>${state.statusMessage?`<div style="height:10px"></div><div class="muted">${esc(state.statusMessage)}</div>`:''}<div style="height:14px"></div><div class="faint">Supabase is optional for static deployment, but it is the cleanest way to persist users, sessions, and plan state.</div></div></div>`;
+  }
+
+  function plansView(){
+    const plans = [
+      {id:'starter',name:'Starter',price:'$19/mo',features:['10 sessions','Solo rep practice','Session history']},
+      {id:'pro',name:'Pro',price:'$39/mo',features:['40 sessions','Manager-style review','Priority usage']},
+      {id:'team',name:'Team',price:'$99/mo',features:['Unlimited seats','Admin access patterns','Shared use case']}
+    ];
+    return `<div><div class="topbar"><div class="title"><h2>Plans</h2><p>Use Stripe Checkout Links for a stable no-backend billing flow.</p></div></div><div class="plan-grid">${plans.map(p=>`<div class="card"><div class="label">${esc(p.name)}</div><div class="stat">${esc(p.price)}</div><div style="height:8px"></div>${p.features.map(x=>`<div class="muted" style="margin:8px 0">• ${esc(x)}</div>`).join('')}<div style="height:16px"></div><button class="btn primary" style="width:100%" onclick="App.checkout('${p.id}')">Open ${esc(p.name)} checkout</button></div>`).join('')}</div><div style="height:16px"></div><div class="card"><h3>How billing works in this one-file build</h3><div class="muted" style="line-height:1.65">Create a Stripe product, generate a Payment Link or Checkout Link for each plan, then paste those links into the placeholders in this file. That avoids webhook complexity and gets you live fastest. If later you want automatic subscription syncing, move to a backend version.</div></div></div>`;
+  }
+
+  function trainView(){
+    const scn = scenario(); const dm = diffMeta();
+    return `<div><div class="topbar"><div class="title"><h2>Configure Session</h2><p>Voice rep practice with GPT homeowner simulation, Whisper transcription, and TTS playback.</p></div><div class="row">${state.user?`<span class="pill green">Signed in</span>`:`<span class="pill red">Sign in required</span>`}<button class="btn primary" onclick="App.launchSession()">Go Live</button></div></div>
+      <div class="grid equal">
+        <div class="card"><h3>Scenario</h3><div class="scenario-grid">${SCENARIOS.map(x=>`<div class="scenario ${x.id===scn.id?'active':''}" onclick="App.pickScenario(${x.id})"><div style="font-weight:800">${esc(x.label)}</div><div class="muted" style="margin-top:4px">${esc(x.pest)} • ${esc(x.personality)}</div></div>`).join('')}</div></div>
+        <div class="card"><h3>Difficulty</h3><div class="diff-grid">${DIFFS.map(x=>`<div class="diff ${x.level===state.sessionConfig.diff?'active':''}" onclick="App.pickDiff(${x.level})"><div style="font-size:24px;font-weight:800">L${x.level}</div><div class="muted">${esc(x.tag)}</div></div>`).join('')}</div><div style="height:10px"></div><div class="muted">${esc(dm.desc)}</div><div style="height:10px"></div><label class="label">Max turns</label><div style="height:6px"></div><select class="select" onchange="App.setTurns(this.value)">${[6,8,10,12].map(n=>`<option ${n===state.sessionConfig.maxTurns?'selected':''}>${n}</option>`).join('')}</select></div>
+      </div>
+    </div>`;
+  }
+
+  function sessionView(){
+    const ss = state.currentSession;
+    if(!ss) return trainView();
+    return `<div><div class="topbar"><div class="title"><h2>Live Session</h2><p>${esc(ss.scenario.label)} • L${ss.diff} • ${ss.turns}/${ss.maxTurns} turns</p></div><div class="row"><span class="pill blue">${esc(ss.status)}</span><button class="btn secondary small" onclick="App.endSessionEarly()">End & score now</button></div></div>
+      <div class="session-shell">
+        <div class="card"><div class="messages">${ss.messages.map(m=>`<div class="bubble-wrap ${m.speaker==='rep'?'rep':''}">${m.speaker!=='rep'?'<div class="avatar">🏠</div>':''}<div class="bubble">${esc(m.text)}</div>${m.speaker==='rep'?'<div class="avatar" style="background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.35)">YOU</div>':''}</div>`).join('')}${['thinking','transcribing','scoring'].includes(ss.phase)?`<div class="bubble-wrap"><div class="avatar">⋯</div><div class="bubble">${esc(ss.status)}</div></div>`:''}</div></div>
+        <div class="card"><h3>Controls</h3><div class="controls"><button class="mic ${ss.phase==='recording'?'recording':''} ${['transcribing','thinking','speaking','scoring'].includes(ss.phase)?'busy':''}" onpointerdown="App.startRecording()" onpointerup="App.stopRecording()" onpointerleave="App.stopRecording()">${ss.phase==='recording'?'■':'🎙'}</button></div><div style="height:10px"></div><div class="muted">Hold the mic button while you talk. Release to send your reply.</div><div style="height:14px"></div><button class="btn secondary small" onclick="App.skipAudio()">Skip homeowner audio</button>${ss.error?`<div style="height:12px"></div><div class="pill red">${esc(ss.error)}</div>`:''}<div style="height:18px"></div><h3>Session brief</h3><div class="muted" style="line-height:1.65">The homeowner AI adapts to rep quality. Strong openers improve cooperation. Weak value framing keeps resistance high. Your final score weights objections and opener most heavily.</div></div>
+      </div>
+    </div>`;
+  }
+
+  function resultsView(){
+    const r = state.lastScore;
+    if(!r) return `<div class="card"><h3>No result yet</h3><div class="muted">Run a session first.</div></div>`;
+    return `<div><div class="topbar"><div class="title"><h2>Results</h2><p>${esc(r.scenario)} • ${new Date(r.created_at).toLocaleString()}</p></div><div class="row"><button class="btn secondary" onclick="App.go('train')">Configure another</button><button class="btn primary" onclick="App.launchSession()">Practice again</button></div></div>
+      <div class="grid two">
+        <div>
+          <div class="card"><div class="row between"><div><div class="label">Readiness</div><div class="stat" style="color:${color(r.readiness)}">${r.readiness}</div></div><span class="pill ${r.readiness>=80?'green':r.readiness>=60?'amber':'red'}">${grade(r.readiness)}</span></div><div style="height:8px"></div><div class="progress"><div style="width:${r.readiness}%;background:${color(r.readiness)}"></div></div><div style="height:14px"></div><div class="muted">Outcome: ${esc(r.outcome.replace(/_/g,' '))}</div></div>
+          <div style="height:16px"></div>
+          <div class="card"><h3>Dimension breakdown</h3>${Object.entries(r.dims).map(([k,v])=>`<div style="margin-bottom:12px"><div class="row between" style="margin-bottom:6px"><div>${esc(k)}</div><div style="font-weight:800;color:${color(v)}">${v}</div></div><div class="progress"><div style="width:${v}%;background:${color(v)}"></div></div></div>`).join('')}</div>
+        </div>
+        <div>
+          <div class="card"><h3>Coaching</h3><div class="muted" style="line-height:1.7">${esc(r.notes)}</div>${r.strengths?.length?`<div style="height:14px"></div><div class="label">Strengths</div>${r.strengths.map(x=>`<div class="muted" style="margin-top:8px">• ${esc(x)}</div>`).join('')}`:''}${r.improvements?.length?`<div style="height:14px"></div><div class="label">Improvements</div>${r.improvements.map(x=>`<div class="muted" style="margin-top:8px">• ${esc(x)}</div>`).join('')}`:''}</div>
+          <div style="height:16px"></div>
+          <div class="card"><h3>Transcript</h3><div class="messages" style="height:360px">${r.messages.map(m=>`<div class="bubble-wrap ${m.speaker==='rep'?'rep':''}">${m.speaker!=='rep'?'<div class="avatar">🏠</div>':''}<div class="bubble">${esc(m.text)}</div>${m.speaker==='rep'?'<div class="avatar" style="background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.35)">YOU</div>':''}</div>`).join('')}</div></div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function teamView(){
+    return `<div><div class="topbar"><div class="title"><h2>Team Snapshot</h2><p>Demo manager view for the static build.</p></div></div><div class="card"><table class="table"><thead><tr><th>Rep</th><th>Score</th><th>Diff</th><th>Sessions</th><th>Trend</th></tr></thead><tbody>${state.team.map(r=>`<tr><td>${esc(r.name)}</td><td style="color:${color(r.score)};font-weight:800">${r.score}</td><td>L${r.diff}</td><td>${r.sessions}</td><td style="color:${r.trend>=0?S.green:S.red};font-weight:800">${r.trend>=0?'+':''}${r.trend}</td></tr>`).join('')}</tbody></table></div></div>`;
+  }
+
+  function adminView(){
+    if(!isAdmin()) return teamView();
+    return `<div><div class="topbar"><div class="title"><h2>Admin</h2><p>Admin email bypass is active for ${esc(ENV.ADMIN_EMAIL||'not set')}.</p></div></div><div class="grid cards"><div class="kpi"><div class="label">Billing bypass</div><div class="stat">On</div><div class="muted">Admin account has unlimited sessions</div></div><div class="kpi"><div class="label">Current plan</div><div class="stat">ADMIN</div><div class="muted">No paywall enforced</div></div><div class="kpi"><div class="label">Supabase</div><div class="stat">${READY.hasSupabase?'Ready':'Off'}</div><div class="muted">Profiles/sessions persist when connected</div></div><div class="kpi"><div class="label">OpenAI</div><div class="stat">${READY.hasOpenAI?'Ready':'Missing'}</div><div class="muted">Required for live voice sessions</div></div></div><div style="height:16px"></div><div class="card"><h3>Recommended next upgrade</h3><div class="muted" style="line-height:1.7">Once this MVP is validated, move billing and entitlements server-side. That means Stripe webhooks, subscription status syncing, and secure plan enforcement. For now, this one-file version is optimized for speed, clarity, and deploy reliability.</div></div></div>`;
+  }
+
+  function content(){
+    if(!state.user && state.view!=='auth' && state.view!=='plans') state.view='auth';
+    if(state.view==='dashboard') return dashboardView();
+    if(state.view==='auth') return authView();
+    if(state.view==='plans') return plansView();
+    if(state.view==='train') return trainView();
+    if(state.view==='session') return sessionView();
+    if(state.view==='results') return resultsView();
+    if(state.view==='team') return teamView();
+    if(state.view==='admin') return adminView();
+    return dashboardView();
+  }
+
+  function render(){
+    document.getElementById('app').innerHTML = `<div class="app">${sidebar()}<main class="main">${content()}${state.user?`<div style="height:16px"></div><div class="row"><button class="btn secondary small" onclick="App.signOut()">Sign out</button><span class="muted">${esc(state.user.email)}</span></div>`:''}</main></div>`;
+  }
+
+  window.App = {
+    go(v){ state.view=v; render(); },
+    set(k,v){ state[k]=v; render(); },
+    toggleAuthMode(){ state.authMode = state.authMode==='signin'?'signup':'signin'; state.statusMessage=''; render(); },
+    signInOrUp,
+    signOut,
+    checkout: startCheckout,
+    pickScenario(id){ state.sessionConfig.scenarioId=Number(id); render(); },
+    pickDiff(level){ state.sessionConfig.diff=Number(level); render(); },
+    setTurns(v){ state.sessionConfig.maxTurns=Number(v); render(); },
+    launchSession,
+    startRecording,
+    stopRecording,
+    skipAudio,
+    endSessionEarly
+  };
+
+  restore();
+  render();
+  initSupabase().then(render).catch(render);
+})();
+</script>
+</body>
+</html>
