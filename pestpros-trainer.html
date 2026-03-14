@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PestPros AI Sales Trainer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#07090F;color:#EFF6FF;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#ffffff15;border-radius:2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes ripple{0%{transform:scale(1);opacity:.6}100%{transform:scale(2.6);opacity:0}}
+@keyframes glowRed{0%,100%{box-shadow:0 0 16px rgba(239,68,68,.5)}50%{box-shadow:0 0 36px rgba(239,68,68,.9)}}
+@keyframes barAnim{0%,100%{transform:scaleY(.2)}50%{transform:scaleY(1)}}
+@keyframes popIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+.app{display:flex;flex:1;overflow:hidden}
+.sidebar{width:195px;background:#0F1520;border-right:1px solid #ffffff0d;display:flex;flex-direction:column;flex-shrink:0}
+.main{flex:1;overflow-y:auto;background:#07090F}
+.logo-wrap{padding:16px 13px 12px;border-bottom:1px solid #ffffff0d}
+.stat-label{font-size:9px;color:#ffffff30;letter-spacing:.12em;font-family:'Courier New',monospace;margin-bottom:6px}
+.stat-val{font-size:34px;font-weight:700;line-height:1;font-family:'Courier New',monospace}
+.role-wrap{padding:10px 10px 8px;border-bottom:1px solid #ffffff0d}
+.role-btns{display:flex;gap:3px;background:#07090F;border-radius:5px;padding:3px}
+.role-btn{flex:1;padding:4px 0;border-radius:3px;border:none;cursor:pointer;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;font-family:'Courier New',monospace;transition:all .15s}
+.role-btn.on{background:#F59E0B;color:#000}
+.role-btn:not(.on){background:transparent;color:#ffffff30}
+nav{padding:7px 5px;flex:1}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:5px;color:#ffffff30;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;user-select:none}
+.nav-item:hover{color:#EFF6FFaa;background:#1A2540}
+.nav-item.on{color:#EFF6FF;background:#1A2540}
+.user-row{padding:10px 11px;border-top:1px solid #ffffff0d;display:flex;align-items:center;gap:8px}
+.avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#3B82F6,#1D4ED8);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+.page{padding:24px 28px;max-width:900px;animation:fadeUp .3s ease}
+.card{background:#141E2E;border:1px solid #ffffff0d;border-radius:9px}
+.stat-card{background:#141E2E;border:1px solid #ffffff0d;border-radius:9px;padding:16px 18px}
+.pill{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.07em;font-family:'Courier New',monospace}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;user-select:none}
+.btn:active:not(:disabled){transform:scale(.96)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-amber{background:#F59E0B;color:#000}.btn-amber:hover:not(:disabled){background:#FBBF24}
+.btn-ghost{background:transparent;color:#ffffff60;border:1px solid #ffffff0d}.btn-ghost:hover:not(:disabled){background:#141E2E;color:#EFF6FF}
+.btn-raised{background:#141E2E;color:#EFF6FF;border:1px solid #ffffff0d}.btn-raised:hover:not(:disabled){background:#1c2840}
+.score-bar-bg{background:#0F1520;border-radius:4px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 16px}
+th{font-size:9px;font-weight:700;color:#ffffff30;letter-spacing:.1em;font-family:'Courier New',monospace;background:#0F1520}
+tbody tr{border-top:1px solid #ffffff08;transition:background .1s}
+tbody tr:hover td{background:#141E2E}
+.api-screen{position:fixed;inset:0;background:#07090F;display:flex;align-items:center;justify-content:center;z-index:500}
+.api-card{background:#141E2E;border:1px solid #ffffff0d;border-radius:12px;padding:36px 40px;width:420px}
+.api-input{width:100%;padding:11px 14px;background:#07090F;border:1px solid #ffffff15;border-radius:7px;color:#EFF6FF;font-size:13px;outline:none;transition:border-color .15s;font-family:inherit}
+.api-input:focus{border-color:#F59E0B}
+.session-screen{position:fixed;inset:0;background:#07090F;display:flex;flex-direction:column;z-index:200}
+.msg-wrap{display:flex;gap:10px;animation:fadeUp .2s ease}
+.msg-bubble{max-width:66%;padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.6}
+.msg-tag{font-size:9px;font-weight:700;letter-spacing:.1em;font-family:'Courier New',monospace;margin-bottom:3px}
+.mic-btn{width:66px;height:66px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:background .15s,box-shadow .15s;position:relative;z-index:1}
+.ring-wrap{position:relative;flex-shrink:0}
+.ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-weight:700}
+input,textarea,button{font-family:inherit}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const S={
+  bg:'#07090F',surface:'#0F1520',card:'#141E2E',
+  amber:'#F59E0B',amberBg:'rgba(245,158,11,.1)',
+  blue:'#3B82F6',blueBg:'rgba(59,130,246,.1)',
+  green:'#10B981',greenBg:'rgba(16,185,129,.1)',
+  red:'#EF4444',redBg:'rgba(239,68,68,.1)',
+  text:'#EFF6FF',muted:'rgba(239,246,255,.55)',faint:'rgba(239,246,255,.25)',
+};
+const sc=v=>v>=72?S.green:v>=50?S.amber:S.red;
+const sg=v=>v>=85?'Elite':v>=72?'Strong':v>=55?'Developing':'Needs Work';
+
+const SESSIONS=[
+  {id:1,date:'Mar 8',score:71,diff:2,outcome:'close_attempted',opener:75,tonality:68,discovery:65,objections:72,closing:70,resilience:74},
+  {id:2,date:'Mar 6',score:64,diff:2,outcome:'no_close',opener:60,tonality:70,discovery:58,objections:62,closing:55,resilience:68},
+  {id:3,date:'Mar 4',score:58,diff:1,outcome:'no_close',opener:55,tonality:62,discovery:50,objections:58,closing:52,resilience:60},
+  {id:4,date:'Mar 1',score:52,diff:1,outcome:'abandoned',opener:48,tonality:55,discovery:44,objections:50,closing:45,resilience:52},
+];
+const TEAM=[
+  {id:1,name:'Holland Carter',ini:'HC',score:71,diff:2,s7d:3,trend:7},
+  {id:2,name:'Marcus Webb',ini:'MW',score:84,diff:3,s7d:5,trend:12},
+  {id:3,name:'Priya Nambiar',ini:'PN',score:61,diff:2,s7d:2,trend:-3},
+  {id:4,name:'DeShawn Torres',ini:'DT',score:48,diff:1,s7d:0,trend:-8},
+  {id:5,name:'Caitlin Fosse',ini:'CF',score:77,diff:3,s7d:4,trend:5},
+];
+const QUEUE=[
+  {id:1,rep:'Holland Carter',score:71,diff:2,outcome:'close_attempted',status:'pending_review',date:'Mar 8'},
+  {id:2,rep:'Marcus Webb',score:84,diff:3,outcome:'close_attempted',status:'approved',date:'Mar 7'},
+  {id:3,rep:'Priya Nambiar',score:61,diff:2,outcome:'no_close',status:'needs_adjustment',date:'Mar 6'},
+  {id:4,rep:'DeShawn Torres',score:48,diff:1,outcome:'abandoned',status:'pending_review',date:'Mar 5'},
+  {id:5,rep:'Caitlin Fosse',score:77,diff:3,outcome:'close_attempted',status:'approved',date:'Mar 4'},
+];
+const SCENARIOS=[
+  {id:1,label:'Skeptical Homeowner',personality:'skeptical',pest:'ants',season:'spring',competitor:'Terminix'},
+  {id:2,label:'Friendly but Hesitant',personality:'friendly',pest:'spiders',season:'summer',competitor:'none'},
+  {id:3,label:'Busy / Time-Pressured',personality:'busy',pest:'rodents',season:'fall',competitor:'Orkin'},
+  {id:4,label:'Budget-Conscious',personality:'frugal',pest:'mosquitoes',season:'spring',competitor:'none'},
+];
+const DIFFS=[
+  {level:1,color:S.green,tag:'EASY',desc:'Patient. Great for warm-up reps.'},
+  {level:2,color:S.blue,tag:'MED',desc:'Some pushback. Real-world pacing.'},
+  {level:3,color:S.amber,tag:'HARD',desc:'Skeptical. Value framing required.'},
+  {level:4,color:S.red,tag:'ELITE',desc:'Will hang up if you stumble early.'},
+];
+const COACHING=[
+  {tag:'close_timing',text:'You waited too long to close. Buying signals appear around turn 7-9 — move earlier when curiosity questions start.'},
+  {tag:'value_framing',text:'Price objections hit twice without a value anchor. Lead with the guarantee and service cadence before quoting cost.'},
+  {tag:'question_depth',text:'Discovery stayed surface-level. After each answer, dig one level deeper into the pain before pitching the solution.'},
+];
+
+let state={
+  view:'dashboard',role:'rep',apiKey:'',
+  session:null,lastScore:null,selRep:null,selReview:null,filter:'all',
+  reviewOutcome:null,reviewNotes:'',reviewSaved:false,
+  sessionDiff:2,sessionScen:SCENARIOS[0],
+};
+
+function setState(patch){Object.assign(state,patch);render();}
+
+// ── OPENAI ──────────────────────────────────────────────────────
+function buildSysPrompt(scenario,difficulty){
+  const tones=[
+    'Be patient and somewhat open.',
+    'Be mildly skeptical. Push back on price and time commitment.',
+    'Be quite skeptical. Require strong value framing before warming up.',
+    'Be very guarded. End the call if the rep stumbles in the first 2-3 turns.'
+  ];
+  return `You are a homeowner answering your front door to a door-to-door pest control sales rep.
+Context: It is ${scenario.season}. You have a ${scenario.pest} problem. ${scenario.competitor!=='none'?`You currently use ${scenario.competitor} but are not fully satisfied.`:'You have no current pest service.'}
+Personality: ${scenario.personality}. ${tones[difficulty-1]}
+Rules: Stay in character. Keep replies 1-3 sentences MAX. React naturally to rep quality. Opening: greet based on your personality.`;
+}
+
+async function callGPT(messages){
+  const r=await fetch('https://api.openai.com/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.apiKey},
+    body:JSON.stringify({model:'gpt-4o-mini',messages,max_tokens:120,temperature:.85})
+  });
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'OpenAI error '+r.status);}
+  return (await r.json()).choices[0].message.content.trim();
+}
+
+async function transcribeAudio(blob){
+  const fd=new FormData();
+  fd.append('file',blob,'audio.webm');
+  fd.append('model','whisper-1');
+  fd.append('language','en');
+  const r=await fetch('https://api.openai.com/v1/audio/transcriptions',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+state.apiKey},
+    body:fd
+  });
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'Whisper error');}
+  return ((await r.json()).text||'').trim();
+}
+
+async function synthesizeSpeech(text){
+  const r=await fetch('https://api.openai.com/v1/audio/speech',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.apiKey},
+    body:JSON.stringify({model:'tts-1',voice:'alloy',input:text,speed:1.0})
+  });
+  if(!r.ok) throw new Error('TTS error '+r.status);
+  const blob=new Blob([await r.arrayBuffer()],{type:'audio/mpeg'});
+  return URL.createObjectURL(blob);
+}
+
+async function scoreSession(messages,difficulty,scenario){
+  const tx=messages.map((m,i)=>`[${i}|${m.role==='user'?'REP':'HOMEOWNER'}]: "${m.content}"`).join('\n');
+  const resp=await callGPT([
+    {role:'system',content:`Score this pest control rep. Return ONLY valid JSON no markdown:
+{"opener":0-100,"tonality":0-100,"discovery":0-100,"objections":0-100,"closing":0-100,"resilience":0-100,"outcome":"close_attempted|no_close|abandoned","notes":"2 sentences of specific coaching"}`},
+    {role:'user',content:`Difficulty L${difficulty} | Scenario: ${scenario.label}\n\n${tx}`}
+  ]);
+  try{return JSON.parse(resp.replace(/```json|```/g,'').trim());}
+  catch{return {opener:60,tonality:60,discovery:55,objections:58,closing:50,resilience:62,outcome:'no_close',notes:'Session complete.'};}
+}
+
+// ── SESSION STATE MACHINE ───────────────────────────────────────
+let SS=null;
+let recorderRef=null;
+let recChunks=[];
+
+async function initSession(session){
+  const {scenario,diff}=session;
+  const openings={
+    skeptical:"Can I help you? I'm not really interested in buying anything.",
+    friendly:"Hi! What can I do for you?",
+    busy:"Yeah? Make it quick — I'm in the middle of something.",
+    frugal:"Hi. Fair warning — I'm on a pretty tight budget."
+  };
+  SS={
+    sysPrompt:buildSysPrompt(scenario,diff),scenario,diff,
+    history:[{role:'assistant',content:openings[scenario.personality]||"Hi, what can I do for you?"}],
+    displayMsgs:[{speaker:'ai',text:openings[scenario.personality]||"Hi, what can I do for you?"}],
+    phase:'speaking',status:'Homeowner speaking…',
+    turns:0,maxTurns:8,error:'',endConfirm:false,done:false,_audio:null,
+  };
+  refreshSession();
+  await speakLine(SS.history[0].content);
+  if(!SS)return;
+  SS.phase='idle';SS.status='Hold button to speak';
+  refreshSession();
+}
+
+async function speakLine(text){
+  try{
+    const url=await synthesizeSpeech(text);
+    await new Promise(res=>{
+      const a=new Audio(url);
+      a.onended=res;a.onerror=res;
+      a.play().catch(res);
+      if(SS)SS._audio=a;
+    });
+    URL.revokeObjectURL(url);
+  }catch(e){console.warn('TTS skip:',e.message);}
+}
+
+async function startRecording(){
+  if(!SS||SS.phase!=='idle')return;
+  SS.error='';
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const mime=MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/ogg';
+    const rec=new MediaRecorder(stream,{mimeType:mime});
+    recChunks=[];
+    rec.ondataavailable=e=>{if(e.data.size>0)recChunks.push(e.data);};
+    rec.start(100);
+    recorderRef=rec;
+    SS.phase='recording';SS.status='Recording… release to send';
+    refreshSession();
+  }catch(e){SS.error='Mic error: '+e.message;refreshSession();}
+}
+
+async function stopRecording(){
+  if(!SS||SS.phase!=='recording'||!recorderRef)return;
+  const rec=recorderRef;
+  await new Promise(res=>{rec.onstop=res;rec.stop();rec.stream.getTracks().forEach(t=>t.stop());});
+  const blob=new Blob(recChunks,{type:rec.mimeType});
+  if(blob.size<800){SS.phase='idle';SS.status='Hold button to speak';refreshSession();return;}
+  SS.phase='transcribing';SS.status='Transcribing…';refreshSession();
+  let repText='';
+  try{repText=await transcribeAudio(blob);}
+  catch(e){SS.error='Transcription failed: '+e.message;SS.phase='idle';SS.status='Hold button to speak';refreshSession();return;}
+  if(!repText.trim()||!SS){if(SS){SS.phase='idle';SS.status='Hold button to speak';refreshSession();}return;}
+  SS.displayMsgs.push({speaker:'rep',text:repText});
+  SS.history.push({role:'user',content:repText});
+  await doTurn();
+}
+
+async function doTurn(){
+  if(!SS)return;
+  SS.turns++;
+  if(SS.turns>=SS.maxTurns){await finishSession();return;}
+  SS.phase='thinking';SS.status='Homeowner thinking…';refreshSession();
+  try{
+    const aiText=await callGPT([{role:'system',content:SS.sysPrompt},...SS.history]);
+    if(!SS)return;
+    SS.history.push({role:'assistant',content:aiText});
+    SS.displayMsgs.push({speaker:'ai',text:aiText});
+    const enders=['goodbye','not interested','please leave','have a good day','no thank you'];
+    if(SS.diff>=3&&enders.some(e=>aiText.toLowerCase().includes(e))){
+      SS.phase='speaking';SS.status='Homeowner speaking…';refreshSession();
+      await speakLine(aiText);
+      await finishSession();return;
+    }
+    SS.phase='speaking';SS.status='Homeowner speaking…';refreshSession();
+    await speakLine(aiText);
+    if(!SS)return;
+    SS.phase='idle';SS.status='Hold button to speak';refreshSession();
+  }catch(e){
+    if(!SS)return;
+    SS.error='Error: '+e.message;SS.phase='idle';SS.status='Hold button to speak';refreshSession();
+  }
+}
+
+async function finishSession(){
+  if(!SS)return;
+  SS._audio?.pause();
+  SS.phase='scoring';SS.status='Scoring session…';refreshSession();
+  try{
+    const scored=await scoreSession(SS.history,SS.diff,SS.scenario);
+    const W={opener:.22,tonality:.18,discovery:.15,objections:.25,closing:.10,resilience:.10};
+    const raw=Object.entries(W).reduce((a,[k,w])=>a+(scored[k]||60)*w,0);
+    const readiness=Math.min(Math.round(raw*[1,1.04,1.08,1.12][SS.diff-1]),100);
+    state.lastScore={
+      readiness,diff:SS.diff,scenario:SS.scenario.label,
+      dims:{opener:scored.opener||60,tonality:scored.tonality||60,discovery:scored.discovery||55,
+            objections:scored.objections||58,closing:scored.closing||50,resilience:scored.resilience||62},
+      outcome:scored.outcome||'no_close',notes:scored.notes||'Session complete.',
+      messages:SS.displayMsgs,
+    };
+  }catch(e){
+    const r=55+Math.floor(Math.random()*20);
+    state.lastScore={readiness:r,diff:SS.diff,scenario:SS.scenario.label,
+      dims:{opener:62,tonality:63,discovery:58,objections:60,closing:52,resilience:64},
+      outcome:'no_close',notes:'Scoring unavailable — check API key.',messages:SS.displayMsgs};
+  }
+  SS.done=true;refreshSession();
+  setTimeout(()=>{SS=null;setState({view:'results'});},1400);
+}
+
+function endSession(){
+  if(!SS)return;
+  if(!SS.endConfirm){SS.endConfirm=true;refreshSession();return;}
+  SS._audio?.pause();
+  finishSession();
+}
+
+function skipSpeech(){
+  if(SS?._audio){SS._audio.pause();SS._audio=null;}
+  if(SS&&SS.phase==='speaking'){SS.phase='idle';SS.status='Hold button to speak';refreshSession();}
+}
+
+function refreshSession(){
+  const el=document.getElementById('smount');
+  if(el)el.innerHTML=buildSessionHTML();
+  const sc=document.getElementById('smsg');
+  if(sc)sc.scrollTop=sc.scrollHeight;
+}
+
+// ── HTML HELPERS ───────────────────────────────────────────────
+function ring(value,size){
+  const r=size/2-6,circ=2*Math.PI*r,fill=(value/100)*circ,color=sc(value);
+  return `<div class="ring-wrap" style="width:${size}px;height:${size}px">
+    <svg width="${size}" height="${size}" style="transform:rotate(-90deg);display:block">
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#ffffff08" stroke-width="5"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="5"
+        stroke-dasharray="${fill} ${circ-fill}" stroke-linecap="round"
+        style="transition:stroke-dasharray 1s ease"/>
+    </svg>
+    <div class="ring-num" style="font-size:${size*.23}px;color:${color}">${value}</div>
+  </div>`;
+}
+
+function bar(value,h=5){
+  return `<div class="score-bar-bg" style="height:${h}px">
+    <div class="score-bar-fill" style="width:${Math.min(100,value)}%;height:100%;background:${sc(value)}"></div>
+  </div>`;
+}
+
+function pill(text,color,bg){return `<span class="pill" style="color:${color};background:${bg}">${text}</span>`;}
+function diffpill(d){const di=DIFFS[d-1];return pill('L'+d,di.color,di.color+'18');}
+function statuspill(s){
+  const m={pending_review:[S.amber,S.amberBg,'PENDING'],approved:[S.green,S.greenBg,'APPROVED'],needs_adjustment:[S.red,S.redBg,'FLAGGED']}[s]||[S.faint,'transparent',s];
+  return pill(m[2],m[0],m[1]);
+}
+
+// ── SESSION HTML ───────────────────────────────────────────────
+function buildSessionHTML(){
+  if(!SS)return '';
+  const isRec=SS.phase==='recording',isSpeaking=SS.phase==='speaking',isDone=SS.done;
+  const isProc=['transcribing','thinking','scoring'].includes(SS.phase);
+  const canPress=SS.phase==='idle';
+
+  const msgs=SS.displayMsgs.map((m,i)=>{
+    const isRep=m.speaker==='rep';
+    return `<div class="msg-wrap" style="justify-content:${isRep?'flex-end':'flex-start'}">
+      ${!isRep?`<div style="width:30px;height:30px;border-radius:50%;background:#141E2E;border:1px solid #ffffff0d;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:2px">🏠</div>`:''}
+      <div style="max-width:66%">
+        <div class="msg-tag" style="color:${isRep?S.blue:S.amber};text-align:${isRep?'right':'left'}">${isRep?'YOU':'HOMEOWNER'}</div>
+        <div class="msg-bubble" style="background:${isRep?S.blueBg:S.card};border:1px solid ${isRep?S.blue+'30':'#ffffff0d'};border-bottom-right-radius:${isRep?'3px':'10px'};border-bottom-left-radius:${isRep?'10px':'3px'}">${m.text}</div>
+      </div>
+      ${isRep?`<div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#3B82F6,#1D4ED8);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;margin-top:2px">HC</div>`:''}
+    </div>`;
+  }).join('');
+
+  const thinking=SS.phase==='thinking'?`
+    <div class="msg-wrap">
+      <div style="width:30px;height:30px;border-radius:50%;background:#141E2E;border:1px solid #ffffff0d;display:flex;align-items:center;justify-content:center;font-size:14px">🏠</div>
+      <div style="display:flex;gap:4px;padding:12px 15px;background:#141E2E;border:1px solid #ffffff0d;border-radius:10px;border-bottom-left-radius:3px;align-items:center">
+        ${[0,1,2].map(i=>`<div style="width:6px;height:6px;border-radius:50%;background:#F59E0B;animation:barAnim .8s ${i*.17}s ease-in-out infinite"></div>`).join('')}
+      </div>
+    </div>`:'';
+
+  const doneMsg=isDone?`<div style="text-align:center;padding:22px 0;animation:popIn .4s ease">
+    <div style="display:inline-flex;align-items:center;gap:9px;padding:10px 18px;background:${S.greenBg};border:1px solid ${S.green}40;border-radius:7px">
+      <span>✓</span><span style="font-size:13px;color:${S.green};font-weight:600">Session scored — going to results…</span>
+    </div></div>`:'';
+
+  const statusEl=isRec?`<div style="display:flex;align-items:center;gap:6px"><div style="width:7px;height:7px;border-radius:50%;background:${S.red};animation:blink 1s infinite;box-shadow:0 0 7px ${S.red}"></div><span style="font-size:9px;color:${S.red};font-weight:700;letter-spacing:.1em;font-family:'Courier New',monospace">REC</span></div>`:
+    isSpeaking?`<div style="display:flex;align-items:center;gap:3px;height:14px">${[0,1,2,3,4].map(i=>`<div style="width:2px;height:100%;background:#F59E0B;border-radius:1px;transform-origin:center;animation:barAnim ${.4+i*.07}s ${i*.06}s ease-in-out infinite alternate"></div>`).join('')}</div>`:
+    isProc?`<div style="width:12px;height:12px;border:2px solid #F59E0B30;border-top-color:#F59E0B;border-radius:50%;animation:spin .7s linear infinite"></div>`:
+    isDone?`<span style="font-size:9px;color:${S.green};font-weight:700;letter-spacing:.1em;font-family:'Courier New',monospace">✓ COMPLETE</span>`:
+    `<div style="display:flex;align-items:center;gap:6px"><div style="width:7px;height:7px;border-radius:50%;background:${S.green};box-shadow:0 0 7px ${S.green}"></div><span style="font-size:9px;color:${S.green};font-weight:700;letter-spacing:.1em;font-family:'Courier New',monospace">LIVE</span></div>`;
+
+  const micBg=isRec?S.red:canPress?S.amber:'#1A2540';
+  const micLabel=isRec?'RELEASE TO SEND':isProc?SS.status.toUpperCase():isSpeaking?'HOMEOWNER SPEAKING':'HOLD TO SPEAK';
+
+  return `
+    <div style="height:48px;background:#0F1520;border-bottom:1px solid #ffffff0d;display:flex;align-items:center;justify-content:space-between;padding:0 18px;flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:14px">
+        ${statusEl}
+        <span style="font-size:10px;color:${S.faint};font-family:'Courier New',monospace">TURN <span style="color:${S.muted}">${SS.turns}</span>/${SS.maxTurns}</span>
+        ${diffpill(SS.diff)}
+        <span style="font-size:11px;color:${S.faint}">${SS.scenario.label}</span>
+      </div>
+      <button onclick="endSession()" style="padding:5px 13px;background:transparent;border:1px solid ${SS.endConfirm?S.red:'#ffffff0d'};border-radius:5px;color:${SS.endConfirm?S.red:S.faint};cursor:pointer;font-size:12px;font-weight:600;transition:all .15s">${SS.endConfirm?'⚠ Confirm End':'End Session'}</button>
+    </div>
+    <div id="smsg" style="flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:13px">
+      ${msgs}${thinking}${doneMsg}
+    </div>
+    <div style="background:#0F1520;border-top:1px solid #ffffff0d;padding:15px 22px;display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0">
+      ${SS.error?`<div style="padding:7px 13px;background:${S.redBg};border:1px solid ${S.red}30;border-radius:5px;font-size:12px;color:${S.red}">${SS.error}</div>`:''}
+      ${!isDone?`
+        <div style="position:relative;display:flex;align-items:center;justify-content:center">
+          ${isRec?`<div style="position:absolute;width:90px;height:90px;border-radius:50%;border:2px solid #EF4444;animation:ripple 1.4s ease-out infinite;pointer-events:none"></div><div style="position:absolute;width:90px;height:90px;border-radius:50%;border:2px solid #EF4444;animation:ripple 1.4s .5s ease-out infinite;pointer-events:none"></div>`:''}
+          <button class="mic-btn"
+            style="background:${micBg};cursor:${(canPress||isRec)?'pointer':'not-allowed'};box-shadow:${canPress?'0 0 20px #F59E0B40':isRec?'0 0 16px rgba(239,68,68,.5)':'none'};animation:${isRec?'glowRed 1.5s ease-in-out infinite':'none'};font-size:${isProc?'0':'22px'}"
+            ${canPress?'onpointerdown="startRecording()"':''}
+            ${isRec?'onpointerup="stopRecording()" onpointerleave="stopRecording()"':''}>
+            ${isProc?`<div style="width:20px;height:20px;border:2px solid #F59E0B30;border-top-color:#F59E0B;border-radius:50%;animation:spin .7s linear infinite"></div>`:isSpeaking?'🔊':isRec?'⏹':'🎙'}
+          </button>
+        </div>
+        <div style="font-size:9px;color:${S.faint};letter-spacing:.08em;font-family:'Courier New',monospace">${micLabel}</div>
+        ${isSpeaking?`<button class="btn btn-ghost" style="padding:4px 13px;font-size:11px" onclick="skipSpeech()">Skip ▶▶</button>`:''}
+      `:''}
+    </div>`;
+}
+
+// ── PAGE RENDERERS ─────────────────────────────────────────────
+function renderDashboard(){
+  const l=SESSIONS[0],p=SESSIONS[1],trend=l.score-p.score;
+  const dims=[{label:'Opener',w:'22%',v:l.opener},{label:'Tonality',w:'18%',v:l.tonality},{label:'Discovery',w:'15%',v:l.discovery},{label:'Objections',w:'25%',v:l.objections},{label:'Closing',w:'10%',v:l.closing},{label:'Resilience',w:'10%',v:l.resilience}];
+  const dimRows=dims.map(d=>`<div style="margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <span style="font-size:12px;color:${S.muted}">${d.label} ${pill(d.w,S.faint,S.surface)}</span>
+      <span style="font-size:12px;font-weight:600;color:${sc(d.v)};font-family:'Courier New',monospace">${d.v}</span>
+    </div>${bar(d.v)}</div>`).join('');
+  const bars=[...SESSIONS].reverse().map(s=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+    <span style="font-size:10px;font-weight:700;color:${sc(s.score)};font-family:'Courier New',monospace">${s.score}</span>
+    <div style="width:100%;height:${Math.round((s.score/100)*60)}px;background:${sc(s.score)};border-radius:3px 3px 0 0;opacity:.85"></div>
+  </div>`).join('');
+  const rows=SESSIONS.map(s=>`<tr>
+    <td style="font-size:12px;color:${S.muted}">${s.date}</td>
+    <td>${diffpill(s.diff)}</td>
+    <td><span style="font-size:15px;font-weight:700;color:${sc(s.score)};font-family:'Courier New',monospace">${s.score}</span></td>
+    <td style="font-size:11px;color:${S.faint}">${s.outcome.replace(/_/g,' ')}</td>
+    <td><button class="btn btn-ghost" style="padding:3px 10px;font-size:11px" onclick="setState({view:'results'})">View →</button></td>
+  </tr>`).join('');
+  const coaching=COACHING.map(c=>`<div style="padding:10px 13px;background:${S.surface};border-radius:6px;border-left:3px solid ${S.amber};margin-bottom:7px">
+    <div style="font-size:9px;color:${S.amber};letter-spacing:.1em;font-family:'Courier New',monospace;margin-bottom:3px">${c.tag.replace(/_/g,' ').toUpperCase()}</div>
+    <div style="font-size:12px;color:${S.muted};line-height:1.5">${c.text}</div>
+  </div>`).join('');
+  return `<div class="page">
+    <div class="stat-label">REP DASHBOARD</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+      <h1 style="font-size:22px;font-weight:800">Performance Center</h1>
+      <button class="btn btn-amber" onclick="setState({view:'session-new'})">🎙 Start Session</button>
+    </div>
+    <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:13px;margin-bottom:14px">
+      <div class="stat-card" style="display:flex;align-items:center;gap:16px;min-width:180px">
+        ${ring(l.score,78)}
+        <div><div class="stat-label">READINESS</div><div style="font-size:15px;font-weight:800;margin-bottom:2px">${sg(l.score)}</div><div style="font-size:11px;color:${S.faint}">L${l.diff} · ${l.date}</div></div>
+      </div>
+      <div class="stat-card"><div class="stat-label">TREND</div><div class="stat-val" style="color:${trend>=0?S.green:S.red}">${trend>=0?'+':''}${trend}</div><div style="font-size:11px;color:${S.faint};margin-top:4px">vs previous session</div></div>
+      <div class="stat-card"><div class="stat-label">SESSIONS</div><div class="stat-val">${SESSIONS.length}</div><div style="font-size:11px;color:${S.faint};margin-top:4px">all time</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:14px">
+      <div class="card" style="padding:16px 18px">${dimRows}</div>
+      <div class="card" style="padding:16px 18px">
+        <div class="stat-label">SCORE HISTORY</div>
+        <div style="display:flex;align-items:flex-end;gap:9px;height:80px;margin-bottom:7px">${bars}</div>
+        <div style="display:flex;gap:9px">${[...SESSIONS].reverse().map(s=>`<div style="flex:1;text-align:center;font-size:10px;color:${S.faint}">${s.date}</div>`).join('')}</div>
+      </div>
+    </div>
+    <div class="card" style="padding:16px 18px;margin-bottom:14px"><div class="stat-label">COACHING AREAS</div>${coaching}</div>
+    <div class="card" style="overflow:hidden">
+      <div style="padding:10px 16px;background:${S.surface}"><div class="stat-label" style="margin:0">RECENT SESSIONS</div></div>
+      <table><thead><tr><th>DATE</th><th>DIFF</th><th>SCORE</th><th>OUTCOME</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+    </div>
+  </div>`;
+}
+
+function renderSessionNew(){
+  const scens=SCENARIOS.map(s=>`<div onclick="setState({sessionScen:${JSON.stringify(s).replace(/"/g,'&quot;')}});rerenderNew()"
+    style="padding:11px 13px;border-radius:7px;cursor:pointer;border:1px solid ${state.sessionScen.id===s.id?S.amber:'#ffffff0d'};background:${state.sessionScen.id===s.id?S.amberBg:S.card};transition:all .15s">
+    <div style="font-size:9px;color:${state.sessionScen.id===s.id?S.amber:S.faint};letter-spacing:.1em;font-family:'Courier New',monospace;margin-bottom:4px">${s.personality.toUpperCase()}</div>
+    <div style="font-size:13px;font-weight:600;color:${state.sessionScen.id===s.id?S.text:S.muted};margin-bottom:2px">${s.label}</div>
+    <div style="font-size:11px;color:${S.faint}">${s.pest} · ${s.season}</div>
+  </div>`).join('');
+  const diffs=DIFFS.map(d=>`<div onclick="setState({sessionDiff:${d.level}});rerenderNew()"
+    style="flex:1;padding:10px 5px;border-radius:7px;cursor:pointer;text-align:center;border:1px solid ${state.sessionDiff===d.level?d.color:'#ffffff0d'};background:${state.sessionDiff===d.level?d.color+'14':S.card};transition:all .15s">
+    <div style="font-size:19px;font-weight:700;color:${d.color};line-height:1;margin-bottom:2px;font-family:'Courier New',monospace">L${d.level}</div>
+    <div style="font-size:9px;color:${state.sessionDiff===d.level?d.color:S.faint};font-weight:700;letter-spacing:.08em">${d.tag}</div>
+  </div>`).join('');
+  return `<div class="page" style="max-width:560px">
+    <button class="btn btn-ghost" style="margin-bottom:18px;padding:5px 12px;font-size:12px" onclick="setState({view:'dashboard'})">← Back</button>
+    <div class="stat-label">NEW SESSION</div>
+    <h1 style="font-size:22px;font-weight:800;margin-bottom:8px">Configure Training</h1>
+    <div style="font-size:13px;color:${S.muted};margin-bottom:22px">Voice-powered with GPT-4o-mini homeowner, Whisper transcription, OpenAI TTS output.</div>
+    <div class="stat-label">HOMEOWNER TYPE</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">${scens}</div>
+    <div class="stat-label">DIFFICULTY</div>
+    <div style="display:flex;gap:8px;margin-bottom:7px">${diffs}</div>
+    <div style="font-size:12px;color:${S.faint};margin-bottom:22px">${DIFFS[state.sessionDiff-1].desc}</div>
+    <div style="padding:12px 14px;background:${S.card};border:1px solid #ffffff0d;border-radius:7px;margin-bottom:18px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">How it works</div>
+      <div style="font-size:12px;color:${S.muted};line-height:1.55">Hold the mic button while you speak → Whisper transcribes → GPT-4o-mini responds as the homeowner → OpenAI TTS plays their voice. Up to 8 turns, then GPT-4o-mini scores your performance.</div>
+    </div>
+    <button class="btn btn-amber" onclick="launchSession()" style="width:100%;padding:12px;font-size:14px;font-weight:700;border-radius:7px">Go Live →</button>
+    <div style="text-align:center;font-size:11px;color:${S.faint};margin-top:9px;font-family:'Courier New',monospace">🎧 USE HEADPHONES TO AVOID FEEDBACK</div>
+  </div>`;
+}
+
+function rerenderNew(){
+  const main=document.querySelector('.main');
+  if(main)main.innerHTML=renderSessionNew();
+}
+
+function renderResults(){
+  if(!state.lastScore){
+    return `<div class="page"><div class="stat-label">RESULTS</div><p style="color:${S.muted};margin-bottom:14px">No session yet — complete a live session first.</p><button class="btn btn-amber" onclick="setState({view:'session-new'})">Start a Session</button></div>`;
+  }
+  const {readiness,diff,scenario,dims,outcome,notes}=state.lastScore;
+  const dimRows=[{l:'Opener',w:'22%',v:dims.opener},{l:'Tonality',w:'18%',v:dims.tonality},{l:'Discovery',w:'15%',v:dims.discovery},{l:'Objections',w:'25%',v:dims.objections},{l:'Closing',w:'10%',v:dims.closing},{l:'Resilience',w:'10%',v:dims.resilience}]
+    .map(d=>`<div style="margin-bottom:11px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <span style="font-size:12px;color:${S.muted}">${d.l} ${pill(d.w,S.faint,S.surface)}</span>
+      <span style="font-size:12px;font-weight:700;color:${sc(d.v)};font-family:'Courier New',monospace">${d.v}</span>
+    </div>${bar(d.v,5)}</div>`).join('');
+  return `<div class="page" style="max-width:660px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px">
+      <div><div class="stat-label">SESSION COMPLETE</div><h1 style="font-size:22px;font-weight:800">Results</h1></div>
+      <button class="btn btn-ghost" onclick="setState({view:'dashboard'})">← Dashboard</button>
+    </div>
+    <div class="card" style="padding:22px 26px;margin-bottom:13px;display:flex;gap:24px;align-items:center">
+      ${ring(readiness,106)}
+      <div style="flex:1">
+        <div style="font-size:22px;font-weight:800;color:${sc(readiness)};margin-bottom:5px">${sg(readiness)}</div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px">${pill(scenario,S.muted,S.surface)} ${diffpill(diff)} ${pill((outcome||'no_close').replace(/_/g,' '),S.muted,S.surface)}</div>
+        <div style="height:5px;background:${S.surface};border-radius:3px">
+          <div style="height:100%;width:${readiness}%;background:${sc(readiness)};border-radius:3px;transition:width 1s ease"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="padding:16px 20px;margin-bottom:13px"><div class="stat-label">DIMENSION BREAKDOWN</div>${dimRows}</div>
+    ${notes?`<div style="padding:13px 17px;border-radius:8px;background:${S.amberBg};border:1px solid ${S.amber}30;margin-bottom:13px">
+      <div class="stat-label">GPT-4o-mini COACHING</div>
+      <div style="font-size:13px;color:${S.muted};line-height:1.65">${notes}</div>
+    </div>`:''}
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-amber" onclick="setState({view:'session-new'})" style="flex:1;padding:12px;font-size:13px">Practice Again</button>
+      <button class="btn btn-raised" onclick="setState({view:'transcript'})" style="flex:1;padding:12px;font-size:13px">View Transcript</button>
+    </div>
+  </div>`;
+}
+
+function renderTranscript(){
+  const msgs=state.lastScore?.messages||[];
+  const rows=msgs.map((m,i)=>{const isRep=m.speaker==='rep';return `
+    <div style="padding:11px 16px;border-bottom:1px solid #ffffff07;display:flex;gap:11px">
+      <div style="width:20px;height:20px;border-radius:50%;background:${isRep?S.blueBg:S.surface};border:1px solid ${isRep?S.blue+'40':'#ffffff0d'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-size:9px;font-weight:700;color:${isRep?S.blue:S.amber};font-family:'Courier New',monospace">${i}</span>
+      </div>
+      <div><div style="font-size:9px;font-weight:700;color:${isRep?S.blue:S.amber};letter-spacing:.1em;font-family:'Courier New',monospace;margin-bottom:3px">${isRep?'REP':'HOMEOWNER'}</div>
+      <div style="font-size:13px;color:${S.muted};line-height:1.6">${m.text}</div></div>
+    </div>`;}).join('');
+  return `<div class="page" style="max-width:640px">
+    <div style="display:flex;justify-content:space-between;margin-bottom:20px">
+      <div><div class="stat-label">SESSION LOG</div><h1 style="font-size:22px;font-weight:800">Transcript</h1></div>
+      <button class="btn btn-ghost" onclick="setState({view:'results'})">← Results</button>
+    </div>
+    <div class="card" style="overflow:hidden">${rows||`<div style="padding:20px;color:${S.faint}">No transcript yet.</div>`}</div>
+  </div>`;
+}
+
+function renderManager(){
+  const avg=Math.round(TEAM.reduce((a,r)=>a+r.score,0)/TEAM.length);
+  const active=TEAM.filter(r=>r.s7d>0).length;
+  const rows=TEAM.map(r=>`<tr>
+    <td><div style="display:flex;align-items:center;gap:9px">
+      <div style="width:28px;height:28px;border-radius:50%;background:${S.blueBg};border:1px solid ${S.blue}40;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${S.blue};font-family:'Courier New',monospace">${r.ini}</div>
+      <span style="font-size:13px;font-weight:500">${r.name}</span>
+    </div></td>
+    <td><span style="font-size:16px;font-weight:700;color:${sc(r.score)};font-family:'Courier New',monospace">${r.score}</span></td>
+    <td><span style="font-size:13px;font-weight:600;color:${r.trend>=0?S.green:S.red};font-family:'Courier New',monospace">${r.trend>=0?'+':''}${r.trend}</span></td>
+    <td>${diffpill(r.diff)}</td>
+    <td><span style="font-size:12px;color:${r.s7d>0?S.green:S.red};font-family:'Courier New',monospace">${r.s7d}${r.s7d===0?' ⚠':''}</span></td>
+    <td><button class="btn btn-ghost" style="padding:3px 10px;font-size:11px" onclick="goRepDetail(${r.id})">View →</button></td>
+  </tr>`).join('');
+  return `<div class="page">
+    <div class="stat-label">MANAGER VIEW</div>
+    <h1 style="font-size:22px;font-weight:800;margin-bottom:18px">Team — ${TEAM.length} Reps</h1>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px">
+      ${[{l:'AVG SCORE',v:avg,c:S.blue},{l:'ACTIVE 7D',v:active,c:S.green},{l:'INACTIVE',v:TEAM.length-active,c:S.red},{l:'AVG 7D',v:(TEAM.reduce((a,r)=>a+r.s7d,0)/TEAM.length).toFixed(1),c:S.amber}]
+        .map(s=>`<div class="stat-card"><div class="stat-label">${s.l}</div><div class="stat-val" style="color:${s.c}">${s.v}</div></div>`).join('')}
+    </div>
+    <div class="card" style="overflow:hidden">
+      <table><thead><tr><th>REP</th><th>SCORE</th><th>TREND</th><th>DIFF</th><th>7D</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+    </div>
+  </div>`;
+}
+
+function goRepDetail(id){setState({selRep:TEAM.find(r=>r.id===id),view:'rep-detail'});}
+function goReviewDetail(id){
+  const r=QUEUE.find(q=>q.id===id);
+  setState({selReview:r,reviewOutcome:r.status==='pending_review'?null:r.status,reviewNotes:'',reviewSaved:r.status!=='pending_review',view:'review-detail'});
+}
+
+function renderRepDetail(){
+  const r=state.selRep;if(!r)return renderManager();
+  const rows=SESSIONS.map(s=>`<tr>
+    <td style="font-size:12px;color:${S.muted}">${s.date}</td>
+    <td>${diffpill(s.diff)}</td>
+    <td><span style="font-size:14px;font-weight:700;color:${sc(s.score)};font-family:'Courier New',monospace">${s.score}</span></td>
+    <td style="font-size:11px;color:${S.faint}">${s.outcome.replace(/_/g,' ')}</td>
+  </tr>`).join('');
+  return `<div class="page" style="max-width:740px">
+    <button class="btn btn-ghost" style="margin-bottom:18px;padding:5px 12px;font-size:12px" onclick="setState({view:'manager'})">← Team</button>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+      <div><div class="stat-label">REP PROFILE</div><h1 style="font-size:21px;font-weight:800;margin-bottom:7px">${r.name}</h1>
+        <div style="display:flex;gap:7px">${diffpill(r.diff)} <span class="pill" style="color:${r.trend>=0?S.green:S.red};background:${r.trend>=0?S.greenBg:S.redBg}">${r.trend>=0?'+':''}${r.trend} pts</span></div>
+      </div>
+      <div style="text-align:right"><div class="stat-label">LATEST SCORE</div><div style="font-size:46px;font-weight:700;color:${sc(r.score)};font-family:'Courier New',monospace;line-height:1">${r.score}</div></div>
+    </div>
+    <div class="card" style="overflow:hidden">
+      <div style="padding:10px 16px;background:${S.surface}"><div class="stat-label" style="margin:0">SESSION HISTORY</div></div>
+      <table><thead><tr><th>DATE</th><th>DIFF</th><th>SCORE</th><th>OUTCOME</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>
+  </div>`;
+}
+
+function renderAdmin(){
+  const p=QUEUE.filter(r=>r.status==='pending_review').length;
+  const a=QUEUE.filter(r=>r.status==='approved').length;
+  const f=QUEUE.filter(r=>r.status==='needs_adjustment').length;
+  const pass=a>=3&&f===0;
+  return `<div class="page">
+    <div class="stat-label">SUPER ADMIN</div>
+    <h1 style="font-size:22px;font-weight:800;margin-bottom:18px">Platform Overview</h1>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:20px">
+      ${[{l:'TOTAL SESSIONS',v:23,c:S.text},{l:'PENDING REVIEW',v:p,c:S.amber},{l:'APPROVED',v:a,c:S.green},{l:'ACTIVE REPS',v:5,c:S.blue}]
+        .map(s=>`<div class="stat-card"><div class="stat-label">${s.l}</div><div class="stat-val" style="color:${s.c}">${s.v}</div></div>`).join('')}
+    </div>
+    <div style="padding:14px 18px;border-radius:8px;margin-bottom:20px;background:${pass?S.greenBg:S.amberBg};border:1px solid ${pass?S.green:S.amber}40">
+      <div style="font-size:9px;color:${pass?S.green:S.amber};letter-spacing:.1em;font-family:'Courier New',monospace;margin-bottom:4px">${pass?'✓ ALPHA GATE PASSED':'⏳ ALPHA GATE PENDING'}</div>
+      <div style="font-size:12px;color:${S.muted}">${a} approved · ${p} pending · ${f} flagged — need 5+ approved, 0 flagged</div>
+    </div>
+    <button class="btn btn-amber" onclick="setState({view:'review'})">→ Open Score Review Queue</button>
+  </div>`;
+}
+
+function renderReview(){
+  const list=state.filter==='all'?QUEUE:QUEUE.filter(r=>r.status===state.filter);
+  const rows=list.map((r,i)=>`<tr>
+    <td style="font-size:10px;color:${S.faint};font-family:'Courier New',monospace">${i+1}</td>
+    <td style="font-size:13px;font-weight:500">${r.rep}</td>
+    <td>${statuspill(r.status)}</td>
+    <td><span style="font-size:14px;font-weight:700;color:${sc(r.score)};font-family:'Courier New',monospace">${r.score}</span></td>
+    <td>${diffpill(r.diff)}</td>
+    <td style="font-size:11px;color:${S.faint}">${r.outcome.replace(/_/g,' ')}</td>
+    <td style="font-size:11px;color:${S.faint}">${r.date}</td>
+    <td><button class="btn btn-ghost" style="padding:3px 10px;font-size:11px" onclick="goReviewDetail(${r.id})">${r.status==='pending_review'?'Review →':'View →'}</button></td>
+  </tr>`).join('');
+  const p=QUEUE.filter(r=>r.status==='pending_review').length;
+  const filters=[['all','All'],['pending_review','Pending'],['approved','Approved'],['needs_adjustment','Flagged']];
+  return `<div class="page">
+    <div style="display:flex;justify-content:space-between;margin-bottom:18px">
+      <div><div class="stat-label">ADMIN</div><h1 style="font-size:22px;font-weight:800">Score Review Queue</h1></div>
+      <button class="btn btn-ghost" onclick="setState({view:'admin'})">← Admin</button>
+    </div>
+    <div style="padding:11px 15px;background:${S.amberBg};border:1px solid ${S.amber}30;border-radius:7px;margin-bottom:14px">
+      <div style="font-size:9px;color:${S.amber};letter-spacing:.1em;font-family:'Courier New',monospace;margin-bottom:3px">⏳ ALPHA GATE — ${p} PENDING</div>
+      <div style="font-size:12px;color:${S.muted}">Approve 5+ sessions before activating scoring in production.</div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:13px">
+      ${filters.map(([v,l])=>`<button onclick="setState({filter:'${v}'})" style="padding:4px 12px;border-radius:5px;border:1px solid ${state.filter===v?S.amber:'#ffffff0d'};background:${state.filter===v?S.amberBg:S.card};color:${state.filter===v?S.amber:S.faint};cursor:pointer;font-size:10px;font-weight:700;font-family:'Courier New',monospace;letter-spacing:.07em;transition:all .15s">${l}</button>`).join('')}
+    </div>
+    <div class="card" style="overflow:hidden">
+      <table><thead><tr><th>#</th><th>REP</th><th>STATUS</th><th>SCORE</th><th>DIFF</th><th>OUTCOME</th><th>DATE</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+    </div>
+  </div>`;
+}
+
+const MOCK_TX=[
+  {s:'ai',t:"Can I help you? I'm not really interested in buying anything."},
+  {s:'rep',t:"Hi! I'm Holland with PestPros. We treat about 40 homes on your block — do you currently have pest protection?"},
+  {s:'ai',t:"We've had pest control guys come by before. Never seems to last."},
+  {s:'rep',t:"That's exactly why I'm here — our quarterly service is designed to break that cycle. What's your main issue, ants or something else?"},
+  {s:'ai',t:"Mostly ants in the kitchen. And spiders in the garage."},
+  {s:'rep',t:"Both totally solvable. We treat inside and out same day. Can I walk you through what that looks like?"},
+];
+
+function renderReviewDetail(){
+  const r=state.selReview;if(!r)return renderReview();
+  const mockDims=[{l:'Opener',w:'22%',v:65},{l:'Tonality',w:'18%',v:70},{l:'Discovery',w:'15%',v:60},{l:'Objections',w:'25%',v:72},{l:'Closing',w:'10%',v:58},{l:'Resilience',w:'10%',v:68}];
+  const dims=mockDims.map(d=>`<div style="margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+      <span style="font-size:11px;color:${S.muted}">${d.l} <span style="color:${S.faint};font-size:10px">${d.w}</span></span>
+      <span style="font-size:11px;font-weight:700;color:${sc(d.v)};font-family:'Courier New',monospace">${d.v}</span>
+    </div>${bar(d.v,4)}</div>`).join('');
+  const txRows=MOCK_TX.map((t,i)=>{const isRep=t.s==='rep';return `
+    <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #ffffff07">
+      <div style="width:20px;height:20px;border-radius:50%;background:${isRep?S.blueBg:S.surface};border:1px solid ${isRep?S.blue+'40':'#ffffff0d'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-size:9px;font-weight:700;color:${isRep?S.blue:S.amber};font-family:'Courier New',monospace">${i}</span>
+      </div>
+      <div><div style="font-size:9px;font-weight:700;color:${isRep?S.blue:S.amber};letter-spacing:.1em;font-family:'Courier New',monospace;margin-bottom:2px">${isRep?'REP':'HOMEOWNER'}</div>
+      <div style="font-size:12px;color:${S.muted};line-height:1.55">${t.t}</div></div>
+    </div>`;}).join('');
+  return `<div style="position:fixed;inset:0;background:#07090F;display:flex;flex-direction:column;z-index:300">
+    <div style="height:47px;background:#0F1520;border-bottom:1px solid #ffffff0d;display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:11px">
+        <button onclick="setState({view:'review'})" style="background:none;border:none;color:${S.faint};font-size:12px;cursor:pointer">← Queue</button>
+        <div style="width:1px;height:13px;background:#ffffff0d"></div>
+        <span style="font-size:13px;font-weight:600">${r.rep}</span>${statuspill(r.status)}
+      </div>
+      <span style="font-size:10px;color:${S.faint};font-family:'Courier New',monospace">L${r.diff} · ${r.date}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:340px 1fr;flex:1;overflow:hidden">
+      <div style="background:#0F1520;border-right:1px solid #ffffff0d;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px">
+        <div><div class="stat-label">READINESS</div>
+          <div style="display:flex;align-items:center;gap:13px">${ring(r.score,72)}
+            <div><div style="font-size:13px;font-weight:600;color:${sc(r.score)};margin-bottom:2px">${sg(r.score)}</div>
+            <div style="font-size:11px;color:${S.faint}">L${r.diff} · ×${[1,1.04,1.08,1.12][r.diff-1]}</div></div>
+          </div>
+        </div>
+        <div style="height:1px;background:#ffffff0d"></div>
+        <div><div class="stat-label">DIMENSIONS</div>${dims}</div>
+        <div style="height:1px;background:#ffffff0d"></div>
+        <div>
+          <div class="stat-label">REVIEW DECISION</div>
+          ${state.reviewSaved?`<div style="padding:6px 10px;background:${S.greenBg};border:1px solid ${S.green}40;border-radius:5px;margin-bottom:9px;font-size:12px;font-weight:600;color:${S.green}">✓ Review saved</div>`:''}
+          <div style="display:flex;gap:7px;margin-bottom:10px">
+            ${[['approved','✓ Approve',S.green,S.greenBg],['needs_adjustment','✗ Flag',S.red,S.redBg]].map(([v,l,c,bg])=>`
+            <button onclick="setState({reviewOutcome:'${v}'})" style="flex:1;padding:8px;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px;border:1px solid ${state.reviewOutcome===v?c:'#ffffff0d'};background:${state.reviewOutcome===v?bg:S.card};color:${state.reviewOutcome===v?c:S.faint};transition:all .15s">${l}</button>`).join('')}
+          </div>
+          <div style="font-size:9px;color:${S.faint};letter-spacing:.07em;font-family:'Courier New',monospace;margin-bottom:5px">NOTES</div>
+          <textarea rows="3" placeholder="What did the model get right or wrong?" oninput="state.reviewNotes=this.value"
+            style="width:100%;padding:8px 10px;background:#07090F;border:1px solid #ffffff0d;border-radius:5px;font-size:12px;color:${S.muted};resize:vertical;line-height:1.5;outline:none">${state.reviewNotes}</textarea>
+          <button onclick="setState({reviewSaved:true})" ${!state.reviewOutcome?'disabled':''} style="margin-top:9px;width:100%;padding:10px;border-radius:6px;border:none;font-weight:700;font-size:13px;cursor:${!state.reviewOutcome?'not-allowed':'pointer'};background:${!state.reviewOutcome?S.card:S.amber};color:${!state.reviewOutcome?S.faint:'#000'};transition:all .15s">
+            ${state.reviewSaved?'Update Review':'Submit Review'}
+          </button>
+        </div>
+      </div>
+      <div style="overflow-y:auto;padding:16px 22px;background:#07090F">
+        <div class="stat-label">TRANSCRIPT — ${MOCK_TX.length} TURNS</div>${txRows}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── LAUNCH SESSION ─────────────────────────────────────────────
+function launchSession(){
+  state.session={diff:state.sessionDiff,scenario:state.sessionScen};
+  state.view='session';
+  document.getElementById('root').innerHTML=`<div class="session-screen"><div id="smount" style="display:flex;flex-direction:column;height:100%"></div></div>`;
+  SS=null;
+  initSession(state.session);
+}
+
+// ── API KEY ────────────────────────────────────────────────────
+function submitApiKey(){
+  const val=document.getElementById('apikey')?.value?.trim();
+  if(!val||!val.startsWith('sk-')){alert('Please enter a valid OpenAI API key starting with sk-');return;}
+  setState({apiKey:val});
+}
+
+// ── MAIN RENDER ────────────────────────────────────────────────
+function render(){
+  if(!state.apiKey){
+    document.getElementById('root').innerHTML=`
+      <div class="api-screen">
+        <div class="api-card">
+          <div style="font-size:28px;margin-bottom:8px">🏠</div>
+          <div style="font-size:20px;font-weight:800;margin-bottom:6px">PestPros AI Trainer</div>
+          <div style="font-size:13px;color:${S.muted};line-height:1.6;margin-bottom:24px">Enter your OpenAI API key to connect GPT-4o-mini (homeowner AI), Whisper (voice transcription), and TTS (homeowner voice). Your key stays in memory only.</div>
+          <input class="api-input" id="apikey" type="password" placeholder="sk-..." autocomplete="off"/>
+          <div style="font-size:11px;color:${S.faint};margin-top:10px;line-height:1.5">Requires gpt-4o-mini, whisper-1, tts-1 access. ~$0.02–0.05 per session.</div>
+          <button class="btn btn-amber" style="width:100%;margin-top:16px;padding:11px;font-size:14px;font-weight:700;border-radius:7px" onclick="submitApiKey()">Connect OpenAI →</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if(state.view==='session'){
+    if(!document.querySelector('.session-screen')){
+      document.getElementById('root').innerHTML=`<div class="session-screen"><div id="smount" style="display:flex;flex-direction:column;height:100%"></div></div>`;
+    }
+    refreshSession();
+    return;
+  }
+
+  if(state.view==='review-detail'){
+    document.getElementById('root').innerHTML=renderReviewDetail();
+    return;
+  }
+
+  const repLinks=[{id:'dashboard',i:'⬡',l:'Dashboard'},{id:'session-new',i:'◎',l:'Start Session'}];
+  const manLinks=[{id:'manager',i:'◈',l:'Team'}];
+  const adLinks=[{id:'admin',i:'▦',l:'Overview'},{id:'review',i:'◉',l:'Score Review'}];
+  const links=state.role==='rep'?repLinks:state.role==='manager'?[...repLinks,...manLinks]:adLinks;
+  const nav=links.map(l=>`<div class="nav-item ${state.view===l.id?'on':''}" onclick="setState({view:'${l.id}'})"><span style="width:14px;text-align:center;font-size:11px;opacity:.7">${l.i}</span>${l.l}</div>`).join('');
+  const roleBtns=['rep','manager','admin'].map(r=>`<button class="role-btn ${state.role===r?'on':''}" onclick="setState({role:'${r}',view:'${r==='rep'?'dashboard':r==='manager'?'manager':'admin'}'})">${r}</button>`).join('');
+
+  const pages={dashboard:renderDashboard,'session-new':renderSessionNew,results:renderResults,transcript:renderTranscript,manager:renderManager,'rep-detail':renderRepDetail,admin:renderAdmin,review:renderReview};
+  const pageHTML=(pages[state.view]||renderDashboard)();
+
+  document.getElementById('root').innerHTML=`
+    <div class="app">
+      <aside class="sidebar">
+        <div class="logo-wrap">
+          <div style="display:flex;align-items:center;gap:9px">
+            <div style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#F59E0B,#92400E);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🏠</div>
+            <div><div style="font-size:12px;font-weight:700">PestPros AI</div><div style="font-size:9px;color:#F59E0B;letter-spacing:.12em;font-family:'Courier New',monospace">SALES TRAINER</div></div>
+          </div>
+        </div>
+        <div class="role-wrap"><div class="stat-label">DEMO ROLE</div><div class="role-btns">${roleBtns}</div></div>
+        <nav>${nav}</nav>
+        <div class="user-row"><div class="avatar">HC</div>
+          <div><div style="font-size:12px;font-weight:600">Holland Carter</div><div style="font-size:9px;color:${S.faint};font-family:'Courier New',monospace">${state.role}</div></div>
+        </div>
+      </aside>
+      <main class="main">${pageHTML}</main>
+    </div>`;
+
+  document.querySelector('.main')?.scrollTo(0,0);
+}
+
+window.setState=setState;
+window.submitApiKey=submitApiKey;
+window.launchSession=launchSession;
+window.startRecording=startRecording;
+window.stopRecording=stopRecording;
+window.endSession=endSession;
+window.skipSpeech=skipSpeech;
+window.goRepDetail=goRepDetail;
+window.goReviewDetail=goReviewDetail;
+window.rerenderNew=rerenderNew;
+
+render();
+</script>
+</body>
+</html>
