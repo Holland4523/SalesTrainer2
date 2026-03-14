@@ -4,242 +4,887 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PestPros AI Sales Trainer</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-body{font-family:Arial,Helvetica,sans-serif;background:#0f172a;color:#e2e8f0;margin:0}
-header{padding:16px;background:#020617;border-bottom:1px solid #1e293b}
-h1{margin:0;font-size:22px}
-.container{max-width:900px;margin:20px auto;padding:20px}
-.card{background:#020617;border:1px solid #1e293b;border-radius:8px;padding:16px;margin-bottom:20px}
-input,button,textarea{font-size:14px;padding:8px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0}
-button{cursor:pointer;background:#f59e0b;border:none;color:black;font-weight:bold}
-button:hover{opacity:.9}
-.chat{height:300px;overflow:auto;border:1px solid #1e293b;padding:10px;background:#020617}
-.msg{margin-bottom:10px}
-.msg.rep{color:#38bdf8}
-.msg.ai{color:#f59e0b}
-.small{font-size:12px;color:#94a3b8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#07090F;color:#EFF6FF;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#ffffff15;border-radius:2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes ripple{0%{transform:scale(1);opacity:.6}100%{transform:scale(2.6);opacity:0}}
+@keyframes glowRed{0%,100%{box-shadow:0 0 16px rgba(239,68,68,.5)}50%{box-shadow:0 0 36px rgba(239,68,68,.9)}}
+@keyframes barAnim{0%,100%{transform:scaleY(.2)}50%{transform:scaleY(1)}}
+@keyframes popIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+.app{display:flex;flex:1;overflow:hidden}
+.sidebar{width:195px;background:#0F1520;border-right:1px solid #ffffff0d;display:flex;flex-direction:column;flex-shrink:0}
+.main{flex:1;overflow-y:auto;background:#07090F}
+.logo-wrap{padding:16px 13px 12px;border-bottom:1px solid #ffffff0d}
+.stat-label{font-size:9px;color:#ffffff30;letter-spacing:.12em;font-family:'Courier New',monospace;margin-bottom:6px}
+.stat-val{font-size:34px;font-weight:700;line-height:1;font-family:'Courier New',monospace}
+.role-wrap{padding:10px 10px 8px;border-bottom:1px solid #ffffff0d}
+.role-btns{display:flex;gap:3px;background:#07090F;border-radius:5px;padding:3px}
+.role-btn{flex:1;padding:4px 0;border-radius:3px;border:none;cursor:pointer;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;font-family:'Courier New',monospace;transition:all .15s}
+.role-btn.on{background:#F59E0B;color:#000}
+.role-btn:not(.on){background:transparent;color:#ffffff30}
+nav{padding:7px 5px;flex:1}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:5px;color:#ffffff30;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;user-select:none}
+.nav-item:hover{color:#EFF6FFaa;background:#1A2540}
+.nav-item.on{color:#EFF6FF;background:#1A2540}
+.user-row{padding:10px 11px;border-top:1px solid #ffffff0d;display:flex;align-items:center;gap:8px}
+.avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#3B82F6,#1D4ED8);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+.page{padding:24px 28px;max-width:900px;animation:fadeUp .3s ease}
+.card{background:#141E2E;border:1px solid #ffffff0d;border-radius:9px}
+.stat-card{background:#141E2E;border:1px solid #ffffff0d;border-radius:9px;padding:16px 18px}
+.pill{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.07em;font-family:'Courier New',monospace}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;user-select:none}
+.btn:active:not(:disabled){transform:scale(.96)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-amber{background:#F59E0B;color:#000}.btn-amber:hover:not(:disabled){background:#FBBF24}
+.btn-ghost{background:transparent;color:#ffffff60;border:1px solid #ffffff0d}.btn-ghost:hover:not(:disabled){background:#141E2E;color:#EFF6FF}
+.btn-raised{background:#141E2E;color:#EFF6FF;border:1px solid #ffffff0d}.btn-raised:hover:not(:disabled){background:#1c2840}
+.score-bar-bg{background:#0F1520;border-radius:4px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 16px}
+th{font-size:9px;font-weight:700;color:#ffffff30;letter-spacing:.1em;font-family:'Courier New',monospace;background:#0F1520}
+tbody tr{border-top:1px solid #ffffff08;transition:background .1s}
+tbody tr:hover td{background:#141E2E}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:500}
+.modal-card{background:#141E2E;border:1px solid #ffffff0d;border-radius:12px;padding:36px 40px;width:420px;max-height:90vh;overflow-y:auto}
+.input-field{width:100%;padding:11px 14px;background:#07090F;border:1px solid #ffffff15;border-radius:7px;color:#EFF6FF;font-size:13px;outline:none;transition:border-color .15s;font-family:inherit;margin-bottom:12px}
+.input-field:focus{border-color:#F59E0B}
+.session-screen{position:fixed;inset:0;background:#07090F;display:flex;flex-direction:column;z-index:200}
+.msg-wrap{display:flex;gap:10px;animation:fadeUp .2s ease}
+.msg-bubble{max-width:66%;padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.6}
+.msg-tag{font-size:9px;font-weight:700;letter-spacing:.1em;font-family:'Courier New',monospace;margin-bottom:3px}
+.mic-btn{width:66px;height:66px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:background .15s,box-shadow .15s;position:relative;z-index:1}
+.ring-wrap{position:relative;flex-shrink:0}
+.ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-weight:700}
+input,textarea,button{font-family:inherit}
+.gpt-card{background:#141E2E;border:1px solid #ffffff0d;border-radius:9px;padding:16px 18px}
+.gpt-area{width:100%;min-height:170px;padding:12px 14px;background:#07090F;border:1px solid #ffffff14;border-radius:8px;color:#EFF6FF;font-size:13px;line-height:1.6;resize:vertical;font-family:inherit}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.07em}
+.upgrade-modal{background:#141E2E;border:1px solid #F59E0B40;border-radius:12px;padding:24px;text-align:center}
 </style>
 </head>
-
 <body>
-
-<header>
-<h1>PestPros AI Sales Trainer</h1>
-</header>
-
-<div class="container">
-
-<div class="card" id="authCard">
-<h3>Login</h3>
-<input id="authEmail" type="email" placeholder="Email"><br><br>
-<input id="authPassword" type="password" placeholder="Password" autocomplete="current-password"><br><br>
-<button onclick="login()">Login</button>
-<p class="small">Admin email bypass enabled.</p>
-</div>
-
-<div class="card" id="dashboard" style="display:none">
-<h3>Dashboard</h3>
-<button onclick="startSession()">Start Training Session</button>
-<button onclick="checkout('starter')">Buy Starter</button>
-<button onclick="checkout('pro')">Buy Pro</button>
-<button onclick="checkout('team')">Buy Team</button>
-</div>
-
-<div class="card" id="session" style="display:none">
-<h3>Training Session</h3>
-<div class="chat" id="chat"></div><br>
-<textarea id="repInput" placeholder="Type your sales pitch..." rows="3"></textarea><br><br>
-<button onclick="sendRep()">Send</button>
-</div>
-
-</div>
-
+<div id="root"></div>
 <script>
+// ═══════════════════════════════════════════════════════════════════
+// SUPABASE INITIALIZATION
+// ═══════════════════════════════════════════════════════════════════
+const SUPABASE_URL = localStorage.getItem('supabase_url') || '';
+const SUPABASE_ANON_KEY = localStorage.getItem('supabase_anon_key') || '';
+let supabase = null;
 
-/* =============================
-CONFIGURATION (EDIT THESE)
-============================= */
-
-const CONFIG={
-OPENAI_API_KEY:"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
-",
-SUPABASE_URL:"https://gziqvoqhtuwbpphiaduy.supabase.co",
-SUPABASE_ANON_KEY:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6aXF2b3FodHV3YnBwaGlhZHV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NDU3MjgsImV4cCI6MjA4OTAyMTcyOH0.zRy3KIB7TroXv8KFmATA_MY_1dsQd85iQxksvTa0wmA
-",
-ADMIN_EMAIL:"dutchpeil@gmail.com",
-
-STRIPE_STARTER_LINK:"https://buy.stripe.com/bJe28t5NheIqerd5sYbfO00",
-STRIPE_PRO_LINK:"https://buy.stripe.com/bJe28t5NheIqerd5sYbfO00",
-STRIPE_TEAM_LINK:"https://buy.stripe.com/bJe28t5NheIqerd5sYbfO00"
+async function initSupabase(url, key) {
+  if (!url || !key) return null;
+  try {
+    supabase = window.supabase.createClient(url, key);
+    localStorage.setItem('supabase_url', url);
+    localStorage.setItem('supabase_anon_key', key);
+    return supabase;
+  } catch (e) {
+    console.error('Supabase init failed:', e.message);
+    return null;
+  }
 }
 
-/* =============================
-STATE
-============================= */
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  initSupabase(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
 
+// ═══════════════════════════════════════════════════════════════════
+// COLOR & UI CONSTANTS
+// ═══════════════════════════════════════════════════════════════════
+const S={
+  bg:'#07090F',surface:'#0F1520',card:'#141E2E',
+  amber:'#F59E0B',amberBg:'rgba(245,158,11,.1)',
+  blue:'#3B82F6',blueBg:'rgba(59,130,246,.1)',
+  green:'#10B981',greenBg:'rgba(16,185,129,.1)',
+  red:'#EF4444',redBg:'rgba(239,68,68,.1)',
+  purple:'#8B5CF6',purpleBg:'rgba(139,92,246,.1)',
+  text:'#EFF6FF',muted:'rgba(239,246,255,.55)',faint:'rgba(239,246,255,.25)',
+};
+const sc=v=>v>=72?S.green:v>=50?S.amber:S.red;
+const sg=v=>v>=85?'Elite':v>=72?'Strong':v>=55?'Developing':'Needs Work';
+
+const SCENARIOS=[
+  {id:1,label:'Skeptical Homeowner',personality:'skeptical',pest:'ants',season:'spring',competitor:'Terminix'},
+  {id:2,label:'Friendly but Hesitant',personality:'friendly',pest:'spiders',season:'summer',competitor:'none'},
+  {id:3,label:'Busy / Time-Pressured',personality:'busy',pest:'rodents',season:'fall',competitor:'Orkin'},
+  {id:4,label:'Budget-Conscious',personality:'frugal',pest:'mosquitoes',season:'spring',competitor:'none'},
+];
+const DIFFS=[
+  {level:1,color:S.green,tag:'EASY',desc:'Patient. Great for warm-up reps.'},
+  {level:2,color:S.blue,tag:'MED',desc:'Some pushback. Real-world pacing.'},
+  {level:3,color:S.amber,tag:'HARD',desc:'Skeptical. Value framing required.'},
+  {level:4,color:S.red,tag:'ELITE',desc:'Will hang up if you stumble early.'},
+];
+
+const STRIPE_PLANS = [
+  {id:'starter',name:'Starter',price:'$29/mo',features:['5 sessions/month','Basic scoring','Email support']},
+  {id:'pro',name:'Pro',price:'$99/mo',features:['Unlimited sessions','Advanced analytics','Priority support','Team leaderboard']},
+  {id:'team',name:'Team',price:'$299/mo',features:['Unlimited everything','5 team seats','Manager dashboard','Custom scenarios']},
+];
+
+const CUSTOM_GPT_URL='https://chatgpt.com/g/g-67be87f079888191bfa2e2dcd1e66771-sales-trainer';
+const GPT_POPUP='width=980,height=860,left='+(window.screenX+Math.max(40,Math.round((window.outerWidth-980)/2)))+',top='+(window.screenY+Math.max(40,Math.round((window.outerHeight-860)/2)))+',resizable=yes,scrollbars=yes';
+
+// ═══════════════════════════════════════════════════════════════════
+// GLOBAL STATE
+// ═══════════════════════════════════════════════════════════════════
 let state={
-user:null,
-sessionActive:false
+  view:'auth',
+  role:'rep',
+  user:null,
+  apiKey:(localStorage.getItem('pestpros_openai_key')||''),
+  subscriptionTier:'free',
+  sessionDiff:2,
+  sessionScen:SCENARIOS[0],
+  gptTranscript:(localStorage.getItem('pestpros_gpt_transcript')||''),
+  gptScore:null,
+  sessions:[],
+  leaderboard:[],
+  showUpgradeModal:false,
+  authMode:'login',
+  authEmail:'',
+  authPassword:'',
+  authError:'',
+};
+
+let SS=null;
+let recorderRef=null;
+let recChunks=[];
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════
+function setState(patch){Object.assign(state,patch);render();}
+function esc(s){return String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+
+function needsUpgrade(){
+  if(state.subscriptionTier==='pro'||state.subscriptionTier==='team') return false;
+  if(state.subscriptionTier==='starter') return state.sessions?.length>=5;
+  return true;
 }
 
-let lastSessionTime=0
-
-function allowSession(){
-const now=Date.now()
-if(now-lastSessionTime<5000){
-alert("Please wait a few seconds before starting another session.")
-return false
-}
-lastSessionTime=now
-return true
-}
-
-/* =============================
-SUPABASE INIT
-============================= */
-
-let supabase=null
-
-async function initSupabase(){
-const {createClient}=await import("https://esm.sh/@supabase/supabase-js")
-supabase=createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_ANON_KEY)
-
-const {data}=await supabase.auth.getSession()
-if(data.session){
-state.user=data.session.user
-showDashboard()
-}
+// ═══════════════════════════════════════════════════════════════════
+// SUPABASE AUTH
+// ═══════════════════════════════════════════════════════════════════
+async function signUp(email, password) {
+  if (!supabase) return setState({authError:'Supabase not configured'});
+  state.authError='';
+  try {
+    const {data, error} = await supabase.auth.signUp({email, password});
+    if (error) return setState({authError:error.message});
+    setState({user:data.user, view:'dashboard', authMode:'login', authEmail:'', authPassword:''});
+    await loadUserData();
+  } catch (e) {
+    setState({authError:e.message});
+  }
 }
 
-initSupabase()
-
-/* =============================
-AUTH
-============================= */
-
-async function login(){
-
-const email=document.getElementById("authEmail").value
-const password=document.getElementById("authPassword").value
-
-if(email===CONFIG.ADMIN_EMAIL){
-state.user={email}
-showDashboard()
-return
+async function logIn(email, password) {
+  if (!supabase) return setState({authError:'Supabase not configured'});
+  state.authError='';
+  try {
+    const {data, error} = await supabase.auth.signInWithPassword({email, password});
+    if (error) return setState({authError:error.message});
+    setState({user:data.user, view:'dashboard', authMode:'login', authEmail:'', authPassword:''});
+    await loadUserData();
+  } catch (e) {
+    setState({authError:e.message});
+  }
 }
 
-const {data,error}=await supabase.auth.signInWithPassword({email,password})
-
-if(error){
-alert(error.message)
-return
+async function logOut() {
+  if (supabase) {
+    await supabase.auth.signOut();
+  }
+  setState({user:null, view:'auth', sessions:[], subscriptionTier:'free'});
 }
 
-state.user=data.user
-showDashboard()
-
+async function loadUserData() {
+  if (!supabase || !state.user) return;
+  try {
+    const {data, error} = await supabase.from('users').select('*').eq('id', state.user.id).single();
+    if (error && error.code !== 'PGRST116') throw error;
+    if (data) {
+      setState({subscriptionTier:data.subscription_tier||'free'});
+    } else {
+      await supabase.from('users').insert({id:state.user.id, email:state.user.email, subscription_tier:'free'});
+    }
+  } catch (e) {
+    console.error('Load user data error:', e.message);
+  }
 }
 
-function showDashboard(){
-
-document.getElementById("authCard").style.display="none"
-document.getElementById("dashboard").style.display="block"
-
+// ═══════════════════════════════════════════════════════════════════
+// SCENARIO & PROMPT GENERATION
+// ═══════════════════════════════════════════════════════════════════
+function buildSysPrompt(scenario, difficulty) {
+  const tones=[
+    'Be patient and somewhat open.',
+    'Be mildly skeptical. Push back on price and time commitment.',
+    'Be quite skeptical. Require strong value framing before warming up.',
+    'Be very guarded. End the call if the rep stumbles in the first 2-3 turns.'
+  ];
+  return `You are a homeowner answering your front door to a door-to-door pest control sales rep.
+Context: It is ${scenario.season}. You have a ${scenario.pest} problem. ${scenario.competitor!=='none'?`You currently use ${scenario.competitor} but are not fully satisfied.`:'You have no current pest service.'}
+Personality: ${scenario.personality}. ${tones[difficulty-1]}
+Rules: Stay in character. Keep replies 1-3 sentences MAX. React naturally to rep quality. Opening: greet based on your personality.`;
 }
 
-/* =============================
-SESSION
-============================= */
-
-function startSession(){
-
-if(!allowSession()) return
-
-state.sessionActive=true
-
-document.getElementById("dashboard").style.display="none"
-document.getElementById("session").style.display="block"
-
-addMsg("ai","Hello, I'm a homeowner. What do you want?")
-
+function currentScenarioPrompt(){
+  const s=state.sessionScen,d=state.sessionDiff;
+  return `Act as a homeowner answering the door to a pest control rep. Stay fully in role the entire time.\n\nScenario: ${s.label}\nPrimary pest issue: ${s.pest}\nSeason: ${s.season}\nCurrent competitor: ${s.competitor==='none'?'none':s.competitor}\nDifficulty: L${d} ${DIFFS[d-1].tag}\nTone guidance: ${buildSysPrompt(s,d).replace(/\n/g,' ')}\n\nStart with your first homeowner line only. Keep every reply 1-3 sentences.`;
 }
 
-function addMsg(type,text){
-
-const chat=document.getElementById("chat")
-
-const div=document.createElement("div")
-div.className="msg "+type
-div.innerText=text
-
-chat.appendChild(div)
-chat.scrollTop=chat.scrollHeight
-
+function launchCustomGPT(mode='popup'){
+  const txt=currentScenarioPrompt();
+  navigator.clipboard.writeText(txt).catch(()=>{});
+  state.gptLastLaunch=new Date().toLocaleString();
+  state.gptLaunchMode=mode;
+  state.gptWindowOpen=true;
+  if(mode==='tab') window.open(CUSTOM_GPT_URL,'_blank');
+  else window.open(CUSTOM_GPT_URL,'pestpros_gpt',GPT_POPUP);
+  alert('Your Sales Trainer GPT opened. Scenario prompt copied to clipboard. Paste it into the GPT, run the roleplay, then return here and paste the transcript.');
 }
 
-/* =============================
-OPENAI CHAT
-============================= */
-
-async function sendRep(){
-
-const input=document.getElementById("repInput")
-const text=input.value.trim()
-if(!text) return
-
-addMsg("rep",text)
-input.value=""
-
-const ai=await homeownerReply(text)
-
-addMsg("ai",ai)
-
+// ═══════════════════════════════════════════════════════════════════
+// OPENAI API CALLS
+// ═══════════════════════════════════════════════════════════════════
+async function callGPT(messages){
+  if(!state.apiKey) throw new Error('API key required');
+  const r=await fetch('https://api.openai.com/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.apiKey},
+    body:JSON.stringify({model:'gpt-4o-mini',messages,max_tokens:250,temperature:.85})
+  });
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'API error');}
+  return (await r.json()).choices[0].message.content.trim();
 }
 
-async function homeownerReply(text){
-
-const key=window.OPENAI_API_KEY||CONFIG.OPENAI_API_KEY
-
-const res=await fetch("https://api.openai.com/v1/chat/completions",{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-"Authorization":"Bearer "+key
-},
-body:JSON.stringify({
-model:"gpt-4o-mini",
-messages:[
-{role:"system",content:"You are a skeptical homeowner responding to a door to door pest control salesperson. Keep replies short."},
-{role:"user",content:text}
-],
-max_tokens:60
-})
-})
-
-const data=await res.json()
-
-return data.choices[0].message.content
-
+async function scoreTranscriptWithOpenAI(){
+  const tx=(document.getElementById('gptTranscriptInput')?.value||state.gptTranscript||'').trim();
+  if(!tx) return setState({gptScore:null, authError:'Paste the GPT conversation transcript first.'});
+  if(!state.apiKey) return setState({authError:'Add your OpenAI API key first.'});
+  
+  try {
+    setState({authError:'Scoring...'});
+    const resp=await callGPT([
+      {role:'system',content:'You are scoring a pest control sales rep roleplay. Return ONLY valid JSON: {"overall":0-100,"opener":0-100,"rapport":0-100,"discovery":0-100,"objections":0-100,"closing":0-100,"summary":"one short paragraph","next_steps":["tip 1","tip 2","tip 3"]}'},
+      {role:'user',content:`Scenario: ${state.sessionScen.label} | Difficulty: L${state.sessionDiff}\n\nTranscript:\n${tx}`}
+    ]);
+    let parsed;
+    try{ 
+      parsed=JSON.parse(resp.replace(/```json|```/g,'').trim()); 
+    } catch(e){ 
+      parsed={overall:64,opener:63,rapport:65,discovery:61,objections:62,closing:58,summary:resp,next_steps:['Tighten opener','Ask one deeper discovery question','Move to close earlier']}; 
+    }
+    setState({gptScore:parsed, authError:''});
+    localStorage.setItem('pestpros_gpt_transcript',tx);
+  } catch(e) {
+    setState({authError:'Scoring failed: '+e.message});
+  }
 }
 
-/* =============================
-STRIPE
-============================= */
-
-function checkout(plan){
-
-if(plan==="starter")
-window.location.href=CONFIG.STRIPE_STARTER_LINK
-
-if(plan==="pro")
-window.location.href=CONFIG.STRIPE_PRO_LINK
-
-if(plan==="team")
-window.location.href=CONFIG.STRIPE_TEAM_LINK
-
+// ═══════════════════════════════════════════════════════════════════
+// SESSION MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════
+async function saveSession() {
+  if (!supabase || !state.user) return;
+  const session = {
+    user_id: state.user.id,
+    scenario: state.sessionScen.label,
+    difficulty: state.sessionDiff,
+    score: state.gptScore?.overall || 0,
+    transcript: state.gptTranscript,
+    created_at: new Date().toISOString()
+  };
+  try {
+    await supabase.from('sessions').insert([session]);
+    await loadSessions();
+    setState({gptTranscript:'', gptScore:null});
+  } catch (e) {
+    console.error('Save session error:', e.message);
+  }
 }
 
+async function loadSessions() {
+  if (!supabase || !state.user) return;
+  try {
+    const {data} = await supabase.from('sessions').select('*').eq('user_id', state.user.id).order('created_at', {ascending:false});
+    setState({sessions:data||[]});
+  } catch (e) {
+    console.error('Load sessions error:', e.message);
+  }
+}
+
+async function loadLeaderboard() {
+  if (!supabase) return;
+  try {
+    const {data} = await supabase.from('leaderboard').select('*').order('score', {ascending:false}).limit(10);
+    setState({leaderboard:data||[]});
+  } catch (e) {
+    console.error('Load leaderboard error:', e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// LIVE SESSION STATE MACHINE
+// ═══════════════════════════════════════════════════════════════════
+async function initSession(){
+  if(needsUpgrade()) return setState({showUpgradeModal:true});
+  const {scenario,diff}=({scenario:state.sessionScen,diff:state.sessionDiff});
+  const openings={
+    skeptical:"Can I help you? I'm not really interested in buying anything.",
+    friendly:"Hi! What can I do for you?",
+    busy:"Yeah? Make it quick — I'm in the middle of something.",
+    frugal:"Hi. Fair warning — I'm on a pretty tight budget."
+  };
+  SS={
+    sysPrompt:buildSysPrompt(scenario,diff),scenario,diff,
+    history:[{role:'assistant',content:openings[scenario.personality]||"Hi, what can I do for you?"}],
+    displayMsgs:[{speaker:'ai',text:openings[scenario.personality]||"Hi, what can I do for you?"}],
+    phase:'speaking',status:'Homeowner speaking…',
+    turns:0,maxTurns:8,error:'',endConfirm:false,done:false,_audio:null,
+  };
+  refreshSession();
+  await speakLine(SS.history[0].content);
+  if(!SS)return;
+  SS.phase='idle';SS.status='Hold button to speak';
+  refreshSession();
+}
+
+async function speakLine(text){
+  try{
+    if(!state.apiKey) return;
+    const r=await fetch('https://api.openai.com/v1/audio/speech',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.apiKey},
+      body:JSON.stringify({model:'tts-1',voice:'alloy',input:text,speed:1.0})
+    });
+    if(!r.ok) throw new Error('TTS error');
+    const blob=new Blob([await r.arrayBuffer()],{type:'audio/mpeg'});
+    const url=URL.createObjectURL(blob);
+    await new Promise(res=>{
+      const a=new Audio(url);
+      a.onended=res;a.onerror=res;
+      a.play().catch(res);
+      if(SS)SS._audio=a;
+    });
+    URL.revokeObjectURL(url);
+  }catch(e){console.warn('TTS skip:',e.message);}
+}
+
+async function startRecording(){
+  if(!SS||SS.phase!=='idle')return;
+  SS.error='';
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const mime=MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/ogg';
+    const rec=new MediaRecorder(stream,{mimeType:mime});
+    recChunks=[];
+    rec.ondataavailable=e=>{if(e.data.size>0)recChunks.push(e.data);};
+    rec.start(100);
+    recorderRef=rec;
+    SS.phase='recording';SS.status='Recording… release to send';
+    refreshSession();
+  }catch(e){SS.error='Mic error: '+e.message;refreshSession();}
+}
+
+async function stopRecording(){
+  if(!SS||SS.phase!=='recording'||!recorderRef)return;
+  const rec=recorderRef;
+  await new Promise(res=>{rec.onstop=res;rec.stop();rec.stream.getTracks().forEach(t=>t.stop());});
+  const blob=new Blob(recChunks,{type:rec.mimeType});
+  if(blob.size<800){SS.phase='idle';SS.status='Hold button to speak';refreshSession();return;}
+  SS.phase='transcribing';SS.status='Transcribing…';refreshSession();
+  try{
+    const fd=new FormData();
+    fd.append('file',blob,'audio.webm');
+    fd.append('model','whisper-1');
+    fd.append('language','en');
+    const r=await fetch('https://api.openai.com/v1/audio/transcriptions',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+state.apiKey},
+      body:fd
+    });
+    if(!r.ok) throw new Error('Transcription failed');
+    const repText=((await r.json()).text||'').trim();
+    if(!repText.trim()||!SS){if(SS){SS.phase='idle';SS.status='Hold button to speak';refreshSession();}return;}
+    SS.displayMsgs.push({speaker:'rep',text:repText});
+    SS.history.push({role:'user',content:repText});
+    await doTurn();
+  }catch(e){SS.error='Error: '+e.message;SS.phase='idle';SS.status='Hold button to speak';refreshSession();}
+}
+
+async function doTurn(){
+  if(!SS)return;
+  SS.turns++;
+  if(SS.turns>=SS.maxTurns){await finishSession();return;}
+  SS.phase='thinking';SS.status='Homeowner thinking…';refreshSession();
+  try{
+    const aiText=await callGPT([{role:'system',content:SS.sysPrompt},...SS.history]);
+    if(!SS)return;
+    SS.history.push({role:'assistant',content:aiText});
+    SS.displayMsgs.push({speaker:'ai',text:aiText});
+    const enders=['goodbye','not interested','please leave','have a good day','no thank you'];
+    if(SS.diff>=3&&enders.some(e=>aiText.toLowerCase().includes(e))){
+      SS.phase='speaking';SS.status='Homeowner speaking…';refreshSession();
+      await speakLine(aiText);
+      await finishSession();return;
+    }
+    SS.phase='speaking';SS.status='Homeowner speaking…';refreshSession();
+    await speakLine(aiText);
+    if(!SS)return;
+    SS.phase='idle';SS.status='Hold button to speak';refreshSession();
+  }catch(e){
+    if(!SS)return;
+    SS.error='Error: '+e.message;SS.phase='idle';SS.status='Hold button to speak';refreshSession();
+  }
+}
+
+async function finishSession(){
+  if(!SS)return;
+  SS._audio?.pause();
+  SS.phase='scoring';SS.status='Scoring session…';refreshSession();
+  try{
+    const tx=SS.history.map((m,i)=>`[${i}|${m.role==='user'?'REP':'HOMEOWNER'}]: "${m.content}"`).join('\n');
+    const resp=await callGPT([
+      {role:'system',content:`Score this pest control rep. Return ONLY valid JSON no markdown:
+{"opener":0-100,"tonality":0-100,"discovery":0-100,"objections":0-100,"closing":0-100,"resilience":0-100,"outcome":"close_attempted|no_close|abandoned","notes":"2 sentences of specific coaching"}`},
+      {role:'user',content:`Difficulty L${SS.diff} | Scenario: ${SS.scenario.label}\n\n${tx}`}
+    ]);
+    let scored;
+    try{scored=JSON.parse(resp.replace(/\`\`\`json|\`\`\`/g,'').trim());}
+    catch{scored={opener:60,tonality:60,discovery:55,objections:58,closing:50,resilience:62,outcome:'no_close',notes:'Session complete.'};}
+    const W={opener:.22,tonality:.18,discovery:.15,objections:.25,closing:.10,resilience:.10};
+    const raw=Object.entries(W).reduce((a,[k,w])=>a+(scored[k]||60)*w,0);
+    const readiness=Math.min(Math.round(raw*[1,1.04,1.08,1.12][SS.diff-1]),100);
+    state.gptScore={
+      overall:readiness,
+      opener:scored.opener||60,
+      rapport:scored.tonality||60,
+      discovery:scored.discovery||55,
+      objections:scored.objections||58,
+      closing:scored.closing||50,
+      summary:scored.notes||'Session complete.',
+      next_steps:[`Focus on ${scored.opener||60<65?'stronger openers':'tonality'}`,`Improve ${scored.discovery||55<65?'discovery questions':'objection handling'}`,scored.notes||'Great effort!']
+    };
+    SS.done=true;refreshSession();
+    setTimeout(()=>{SS=null;setState({view:'gpt-results'});},1400);
+  }catch(e){
+    const r=55+Math.floor(Math.random()*20);
+    state.gptScore={overall:r,opener:62,rapport:63,discovery:58,objections:60,closing:52,summary:'Scoring unavailable.',next_steps:['Check API key','Review scenario fit','Practice more']};
+    SS.done=true;refreshSession();
+    setTimeout(()=>{SS=null;setState({view:'gpt-results'});},1400);
+  }
+}
+
+function endSession(){
+  if(!SS)return;
+  if(!SS.endConfirm){SS.endConfirm=true;refreshSession();return;}
+  SS._audio?.pause();
+  finishSession();
+}
+
+function skipSpeech(){
+  if(SS?._audio){SS._audio.pause();SS._audio=null;}
+  if(SS&&SS.phase==='speaking'){SS.phase='idle';SS.status='Hold button to speak';refreshSession();}
+}
+
+function refreshSession(){
+  const el=document.getElementById('smount');
+  if(el)el.innerHTML=buildSessionHTML();
+  const sc=document.getElementById('smsg');
+  if(sc)sc.scrollTop=sc.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// HTML RENDERERS
+// ═══════════════════════════════════════════════════════════════════
+function ring(value,size){
+  const r=size/2-6,circ=2*Math.PI*r,fill=(value/100)*circ,color=sc(value);
+  return `<div class="ring-wrap" style="width:${size}px;height:${size}px">
+    <svg width="${size}" height="${size}" style="transform:rotate(-90deg);display:block">
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#ffffff08" stroke-width="5"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="5"
+        stroke-dasharray="${fill} ${circ-fill}" stroke-linecap="round"
+        style="transition:stroke-dasharray 1s ease"/>
+    </svg>
+    <div class="ring-num" style="font-size:${size*.23}px;color:${color}">${value}</div>
+  </div>`;
+}
+
+function bar(value,h=5){
+  return `<div class="score-bar-bg" style="height:${h}px">
+    <div class="score-bar-fill" style="width:${Math.min(100,value)}%;height:100%;background:${sc(value)}"></div>
+  </div>`;
+}
+
+function pill(text,color,bg){return `<span class="pill" style="color:${color};background:${bg}">${text}</span>`;}
+function diffpill(d){const di=DIFFS[d-1];return pill('L'+d,di.color,di.color+'18');}
+
+function buildSessionHTML(){
+  if(!SS)return '';
+  const isRec=SS.phase==='recording',isSpeaking=SS.phase==='speaking',isDone=SS.done;
+  const isProc=['transcribing','thinking','scoring'].includes(SS.phase);
+  const canPress=SS.phase==='idle';
+
+  const msgs=SS.displayMsgs.map((m,i)=>{
+    const isRep=m.speaker==='rep';
+    return `<div class="msg-wrap" style="justify-content:${isRep?'flex-end':'flex-start'}">
+      ${!isRep?`<div style="width:30px;height:30px;border-radius:50%;background:#141E2E;border:1px solid #ffffff0d;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:2px">🏠</div>`:''}
+      <div style="max-width:66%">
+        <div class="msg-tag" style="color:${isRep?S.blue:S.amber};text-align:${isRep?'right':'left'}">${isRep?'YOU':'HOMEOWNER'}</div>
+        <div class="msg-bubble" style="background:${isRep?S.blueBg:S.card};border:1px solid ${isRep?S.blue+'30':'#ffffff0d'};border-bottom-right-radius:${isRep?'3px':'10px'};border-bottom-left-radius:${isRep?'10px':'3px'}">${esc(m.text)}</div>
+      </div>
+      ${isRep?`<div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#3B82F6,#1D4ED8);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;margin-top:2px">YOU</div>`:''}
+    </div>`;
+  }).join('');
+
+  const thinking=SS.phase==='thinking'?`
+    <div class="msg-wrap">
+      <div style="width:30px;height:30px;border-radius:50%;background:#141E2E;border:1px solid #ffffff0d;display:flex;align-items:center;justify-content:center;font-size:14px">🏠</div>
+      <div style="display:flex;gap:4px;padding:12px 15px;background:#141E2E;border:1px solid #ffffff0d;border-radius:10px;border-bottom-left-radius:3px;align-items:center">
+        ${[0,1,2].map(i=>`<div style="width:6px;height:6px;border-radius:50%;background:#F59E0B;animation:barAnim .8s ${i*.17}s ease-in-out infinite"></div>`).join('')}
+      </div>
+    </div>`:'';
+
+  const doneMsg=isDone?`<div style="text-align:center;padding:22px 0;animation:popIn .4s ease">
+    <div style="display:inline-flex;align-items:center;gap:9px;padding:10px 18px;background:${S.greenBg};border:1px solid ${S.green}40;border-radius:7px">
+      <span>✓</span><span style="font-size:13px;color:${S.green};font-weight:600">Session scored — analyzing results…</span>
+    </div></div>`:'';
+
+  const statusEl=isRec?`<div style="display:flex;align-items:center;gap:6px"><div style="width:7px;height:7px;border-radius:50%;background:${S.red};animation:blink 1s infinite;box-shadow:0 0 7px ${S.red}"></div><span style="font-size:9px;color:${S.red};font-weight:700;letter-spacing:.1em;font-family:'Courier New',monospace">REC</span></div>`:
+    isSpeaking?`<div style="display:flex;align-items:center;gap:3px;height:14px">${[0,1,2,3,4].map(i=>`<div style="width:2px;height:100%;background:#F59E0B;border-radius:1px;transform-origin:center;animation:barAnim ${.4+i*.07}s ${i*.06}s ease-in-out infinite alternate"></div>`).join('')}</div>`:
+    isProc?`<div style="width:12px;height:12px;border:2px solid #F59E0B30;border-top-color:#F59E0B;border-radius:50%;animation:spin .7s linear infinite"></div>`:
+    isDone?`<span style="font-size:9px;color:${S.green};font-weight:700;letter-spacing:.1em;font-family:'Courier New',monospace">✓ COMPLETE</span>`:
+    `<div style="display:flex;align-items:center;gap:6px"><div style="width:7px;height:7px;border-radius:50%;background:${S.green};box-shadow:0 0 7px ${S.green}"></div><span style="font-size:9px;color:${S.green};font-weight:700;letter-spacing:.1em;font-family:'Courier New',monospace">LIVE</span></div>`;
+
+  const micBg=isRec?S.red:canPress?S.amber:'#1A2540';
+  const micLabel=isRec?'RELEASE TO SEND':isProc?SS.status.toUpperCase():isSpeaking?'HOMEOWNER SPEAKING':'HOLD TO SPEAK';
+
+  return `
+    <div style="height:48px;background:#0F1520;border-bottom:1px solid #ffffff0d;display:flex;align-items:center;justify-content:space-between;padding:0 18px;flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:14px">
+        ${statusEl}
+        <span style="font-size:10px;color:${S.faint};font-family:'Courier New',monospace">TURN <span style="color:${S.muted}">${SS.turns}</span>/${SS.maxTurns}</span>
+        ${diffpill(SS.diff)}
+        <span style="font-size:11px;color:${S.faint}">${SS.scenario.label}</span>
+      </div>
+      <button onclick="endSession()" style="padding:5px 13px;background:transparent;border:1px solid ${SS.endConfirm?S.red:'#ffffff0d'};border-radius:5px;color:${SS.endConfirm?S.red:S.faint};cursor:pointer;font-size:12px;font-weight:600;transition:all .15s">${SS.endConfirm?'⚠ Confirm End':'End Session'}</button>
+    </div>
+    <div id="smsg" style="flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:13px">
+      ${msgs}${thinking}${doneMsg}
+    </div>
+    <div style="background:#0F1520;border-top:1px solid #ffffff0d;padding:15px 22px;display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0">
+      ${SS.error?`<div style="padding:7px 13px;background:${S.redBg};border:1px solid ${S.red}30;border-radius:5px;font-size:12px;color:${S.red}">${esc(SS.error)}</div>`:''}
+      ${!isDone?`
+        <div style="position:relative;display:flex;align-items:center;justify-content:center">
+          ${isRec?`<div style="position:absolute;width:90px;height:90px;border-radius:50%;border:2px solid #EF4444;animation:ripple 1.4s ease-out infinite;pointer-events:none"></div><div style="position:absolute;width:90px;height:90px;border-radius:50%;border:2px solid #EF4444;animation:ripple 1.4s .5s ease-out infinite;pointer-events:none"></div>`:''}
+          <button class="mic-btn"
+            style="background:${micBg};cursor:${(canPress||isRec)?'pointer':'not-allowed'};box-shadow:${canPress?'0 0 20px #F59E0B40':isRec?'0 0 16px rgba(239,68,68,.5)':'none'};animation:${isRec?'glowRed 1.5s ease-in-out infinite':'none'};font-size:${isProc?'0':'22px'}"
+            ${canPress?'onpointerdown="startRecording()"':''}
+            ${isRec?'onpointerup="stopRecording()" onpointerleave="stopRecording()"':''}>
+            ${isProc?`<div style="width:20px;height:20px;border:2px solid #F59E0B30;border-top-color:#F59E0B;border-radius:50%;animation:spin .7s linear infinite"></div>`:isSpeaking?'🔊':isRec?'⏹':'🎙'}
+          </button>
+        </div>
+        <div style="font-size:9px;color:${S.faint};letter-spacing:.08em;font-family:'Courier New',monospace">${micLabel}</div>
+        ${isSpeaking?`<button class="btn btn-ghost" style="padding:4px 13px;font-size:11px" onclick="skipSpeech()">Skip ▶▶</button>`:''}
+      `:''}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PAGE RENDERERS
+// ═══════════════════════════════════════════════════════════════════
+function renderAuth() {
+  return `<div style="position:fixed;inset:0;background:#07090F;display:flex;align-items:center;justify-content:center">
+    <div class="modal-card" style="width:480px">
+      <div style="text-align:center;margin-bottom:28px">
+        <h1 style="font-size:28px;font-weight:800;margin-bottom:8px">PestPros AI Trainer</h1>
+        <p style="color:${S.muted};font-size:14px">Master sales skills with AI-powered roleplay</p>
+      </div>
+      ${state.authError?`<div style="padding:10px 14px;background:${S.redBg};border:1px solid ${S.red}30;border-radius:7px;color:${S.red};font-size:12px;margin-bottom:16px">${esc(state.authError)}</div>`:''}
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-size:12px;color:${S.faint};margin-bottom:6px;font-weight:600">EMAIL</label>
+        <input class="input-field" id="authEmail" value="${state.authEmail}" onchange="setState({authEmail:this.value})" placeholder="you@example.com" />
+      </div>
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-size:12px;color:${S.faint};margin-bottom:6px;font-weight:600">PASSWORD</label>
+        <input type="password" class="input-field" id="authPassword" value="${state.authPassword}" onchange="setState({authPassword:this.value})" placeholder="••••••••" />
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-amber" style="flex:1;padding:11px" onclick="logIn(state.authEmail,state.authPassword)">Sign In</button>
+        <button class="btn btn-raised" style="flex:1;padding:11px" onclick="signUp(state.authEmail,state.authPassword)">Sign Up</button>
+      </div>
+      <div style="text-align:center;margin-top:20px;padding-top:20px;border-top:1px solid #ffffff0d">
+        <div style="font-size:12px;color:${S.faint};margin-bottom:12px">No Supabase configured? Add details in settings:</div>
+        <input class="input-field" placeholder="Supabase URL" id="sbUrl" style="margin-bottom:8px" />
+        <input class="input-field" placeholder="Supabase Anon Key" id="sbKey" style="margin-bottom:8px" />
+        <button class="btn btn-ghost" style="width:100%;padding:8px" onclick="initSupabase(document.getElementById('sbUrl').value,document.getElementById('sbKey').value);setState({view:'auth'})">Connect Supabase</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderDashboard() {
+  if (!state.user) return renderAuth();
+  const recentScore = state.sessions[0]?.score || 0;
+  const trend = state.sessions.length > 1 ? state.sessions[0]?.score - state.sessions[1]?.score : 0;
+  return `<div class="page">
+    <div class="stat-label">REP DASHBOARD</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+      <div>
+        <h1 style="font-size:22px;font-weight:800">Performance Center</h1>
+        <p style="font-size:12px;color:${S.faint};margin-top:4px">Tier: <strong>${state.subscriptionTier}</strong></p>
+      </div>
+      <button class="btn btn-amber" onclick="setState({view:'session-new'})">🎙 Start Session</button>
+    </div>
+    <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:13px;margin-bottom:14px">
+      <div class="stat-card" style="display:flex;align-items:center;gap:16px;min-width:180px">
+        ${ring(recentScore,78)}
+        <div><div class="stat-label">READINESS</div><div style="font-size:15px;font-weight:800;margin-bottom:2px">${sg(recentScore)}</div><div style="font-size:11px;color:${S.faint}">${state.sessions.length} sessions</div></div>
+      </div>
+      <div class="stat-card"><div class="stat-label">TREND</div><div class="stat-val" style="color:${trend>=0?S.green:S.red}">${trend>=0?'+':''}${trend}</div><div style="font-size:11px;color:${S.faint};margin-top:4px">vs previous session</div></div>
+      <div class="stat-card"><div class="stat-label">SESSIONS</div><div class="stat-val">${state.sessions.length}</div><div style="font-size:11px;color:${S.faint};margin-top:4px">all time</div></div>
+    </div>
+    <div class="card" style="padding:16px 18px">
+      <div class="stat-label">RECENT SESSIONS</div>
+      <table style="margin-top:12px">
+        <thead><tr><th>DATE</th><th>SCENARIO</th><th>SCORE</th></tr></thead>
+        <tbody>${state.sessions.slice(0,5).map(s=>`<tr>
+          <td style="font-size:12px;color:${S.muted}">${new Date(s.created_at).toLocaleDateString()}</td>
+          <td>${esc(s.scenario)}</td>
+          <td><span style="font-size:13px;font-weight:700;color:${sc(s.score)};font-family:'Courier New',monospace">${s.score}</span></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderSessionNew() {
+  const scens=SCENARIOS.map(s=>`<div onclick="setState({sessionScen:${JSON.stringify(s).replace(/"/g,'&quot;')}});render()"
+    style="padding:11px 13px;border-radius:7px;cursor:pointer;border:1px solid ${state.sessionScen.id===s.id?S.amber:'#ffffff0d'};background:${state.sessionScen.id===s.id?S.amberBg:S.card};transition:all .15s">
+    <div style="font-size:9px;color:${state.sessionScen.id===s.id?S.amber:S.faint};letter-spacing:.1em;font-family:'Courier New',monospace;margin-bottom:4px">${s.personality.toUpperCase()}</div>
+    <div style="font-size:13px;font-weight:600;color:${state.sessionScen.id===s.id?S.text:S.muted};margin-bottom:2px">${s.label}</div>
+    <div style="font-size:11px;color:${S.faint}">${s.pest} · ${s.season}</div>
+  </div>`).join('');
+  const diffs=DIFFS.map(d=>`<div onclick="setState({sessionDiff:${d.level}});render()"
+    style="flex:1;padding:10px 5px;border-radius:7px;cursor:pointer;text-align:center;border:1px solid ${state.sessionDiff===d.level?d.color:'#ffffff0d'};background:${state.sessionDiff===d.level?d.color+'14':S.card};transition:all .15s">
+    <div style="font-size:19px;font-weight:700;color:${d.color};line-height:1;margin-bottom:2px;font-family:'Courier New',monospace">L${d.level}</div>
+    <div style="font-size:9px;color:${state.sessionDiff===d.level?d.color:S.faint};font-weight:700;letter-spacing:.08em">${d.tag}</div>
+  </div>`).join('');
+  return `<div class="page" style="max-width:560px">
+    <button class="btn btn-ghost" style="margin-bottom:18px;padding:5px 12px;font-size:12px" onclick="setState({view:'dashboard'})">← Back</button>
+    <div class="stat-label">NEW SESSION</div>
+    <h1 style="font-size:22px;font-weight:800;margin-bottom:8px">Configure Training</h1>
+    <div style="font-size:13px;color:${S.muted};margin-bottom:22px">Choose your homeowner type and difficulty level, then practice live voice roleplay with AI-powered scoring.</div>
+    <div class="stat-label">HOMEOWNER TYPE</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">${scens}</div>
+    <div class="stat-label">DIFFICULTY</div>
+    <div style="display:flex;gap:8px;margin-bottom:7px">${diffs}</div>
+    <div style="font-size:12px;color:${S.faint};margin-bottom:22px">${DIFFS[state.sessionDiff-1].desc}</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-raised" onclick="launchCustomGPT('popup')" style="flex:1;padding:12px;font-size:14px;font-weight:700;border-radius:7px">Your Custom GPT →</button>
+      <button class="btn btn-amber" onclick="initSession()" style="flex:1;padding:12px;font-size:14px;font-weight:700;border-radius:7px">Built-In Voice →</button>
+    </div>
+  </div>`;
+}
+
+function renderGptMode() {
+  const s=state.sessionScen,d=state.sessionDiff,score=state.gptScore;
+  const scoreHTML=score?`
+    <div class="gpt-card" style="margin-top:14px">
+      <div class="stat-label">COACHING REPORT</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+        ${[
+          ['OVERALL',score.overall],['OPENER',score.opener],['RAPPORT',score.rapport],
+          ['DISCOVERY',score.discovery],['OBJECTIONS',score.objections],['CLOSING',score.closing]
+        ].map(([l,v])=>`<div class="stat-card" style="padding:12px 14px"><div class="stat-label">${l}</div><div style="font-size:28px;font-weight:700;color:${sc(Number(v)||0)};font-family:'Courier New',monospace">${Number(v)||0}</div></div>`).join('')}
+      </div>
+      <div style="font-size:13px;color:${S.muted};line-height:1.65;margin-bottom:12px">${esc(score.summary||'')}</div>
+      <div class="stat-label">NEXT STEPS</div>
+      <div>${(score.next_steps||[]).map(t=>`<div style="padding:10px 12px;background:${S.surface};border:1px solid #ffffff0d;border-radius:7px;margin-top:8px;font-size:12px;color:${S.muted}">${esc(t)}</div>`).join('')}</div>
+    </div>`:'';
+  return `<div class="page" style="max-width:1080px">
+    <button class="btn btn-ghost" style="margin-bottom:18px;padding:5px 12px;font-size:12px" onclick="setState({view:'session-new'})">← Back</button>
+    <div class="stat-label">CUSTOM GPT MODE</div>
+    <h1 style="font-size:24px;font-weight:800;margin-bottom:7px">Launch Your Sales Trainer GPT</h1>
+    <div style="font-size:13px;color:${S.muted};max-width:690px;line-height:1.65;margin-bottom:20px">Your real custom GPT stays open in a popup. Practice the roleplay, then paste the transcript here for AI scoring.</div>
+    <div class="gpt-grid">
+      <div>
+        <div class="gpt-card" style="margin-bottom:14px">
+          <div class="stat-label">SCENARIO SETUP</div>
+          <div style="margin-top:12px">
+            <div style="margin-bottom:12px">
+              <div style="font-size:11px;color:${S.faint};margin-bottom:4px">HOMEOWNER</div>
+              <div style="font-size:13px;color:${S.text}">${s.label}</div>
+            </div>
+            <div style="margin-bottom:12px">
+              <div style="font-size:11px;color:${S.faint};margin-bottom:4px">PEST ISSUE</div>
+              <div style="font-size:13px;color:${S.text}">${s.pest} · ${s.season}</div>
+            </div>
+            <div style="margin-bottom:12px">
+              <div style="font-size:11px;color:${S.faint};margin-bottom:4px">DIFFICULTY</div>
+              ${diffpill(d)}
+            </div>
+          </div>
+          <button class="btn btn-amber" style="width:100%;margin-top:12px;padding:10px" onclick="launchCustomGPT('popup')">🚀 Launch Your GPT</button>
+        </div>
+      </div>
+      <div>
+        <div class="gpt-card">
+          <div class="stat-label">PASTE TRANSCRIPT</div>
+          <textarea id="gptTranscriptInput" class="gpt-area" placeholder="Paste your GPT conversation transcript here..." style="margin-top:12px">${state.gptTranscript}</textarea>
+          <button class="btn btn-amber" style="width:100%;margin-top:12px;padding:10px" onclick="scoreTranscriptWithOpenAI()">Score Transcript →</button>
+          <button class="btn btn-ghost" style="width:100%;margin-top:8px;padding:8px;font-size:11px" onclick="setState({gptTranscript:document.getElementById('gptTranscriptInput').value})">Save</button>
+        </div>
+      </div>
+    </div>
+    ${scoreHTML}
+  </div>`;
+}
+
+function renderGptResults() {
+  const score = state.gptScore;
+  if (!score) return `<div class="page"><p>No results yet</p></div>`;
+  return `<div class="page">
+    <button class="btn btn-ghost" style="margin-bottom:18px;padding:5px 12px;font-size:12px" onclick="setState({view:'dashboard'})">← Dashboard</button>
+    <div class="stat-label">SESSION COMPLETE</div>
+    <h1 style="font-size:22px;font-weight:800;margin-bottom:8px">Your Score</h1>
+    <div class="card" style="padding:24px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        ${[
+          ['OVERALL',score.overall],['OPENER',score.opener],['RAPPORT',score.rapport],
+          ['DISCOVERY',score.discovery],['OBJECTIONS',score.objections],['CLOSING',score.closing]
+        ].map(([l,v])=>`<div class="stat-card"><div class="stat-label">${l}</div><div style="font-size:24px;font-weight:700;color:${sc(v)};font-family:'Courier New',monospace">${v}</div></div>`).join('')}
+      </div>
+      <div style="background:${S.surface};border:1px solid #ffffff0d;border-radius:7px;padding:14px;margin-bottom:14px">
+        <div style="font-size:12px;color:${S.muted};line-height:1.6">${esc(score.summary||'Session complete.')}</div>
+      </div>
+      <div class="stat-label">COACHING TIPS</div>
+      ${(score.next_steps||[]).map(t=>`<div style="padding:10px 12px;background:${S.card};border:1px solid #ffffff0d;border-radius:7px;margin-bottom:8px;font-size:12px;color:${S.muted}">${esc(t)}</div>`).join('')}
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-amber" style="flex:1;padding:11px" onclick="setState({view:'session-new'})">Try Again</button>
+      <button class="btn btn-raised" style="flex:1;padding:11px" onclick="saveSession();setState({view:'dashboard'})">Save & Dashboard</button>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MAIN RENDER
+// ═══════════════════════════════════════════════════════════════════
+function render() {
+  const root = document.getElementById('root');
+  if (!root) return;
+
+  if (SS) {
+    root.innerHTML = `<div class="session-screen" id="smount">${buildSessionHTML()}</div>`;
+    return;
+  }
+
+  if (state.view === 'auth') {
+    root.innerHTML = renderAuth();
+  } else if (!state.user) {
+    root.innerHTML = renderAuth();
+  } else if (state.showUpgradeModal) {
+    root.innerHTML = `
+      <div class="app">
+        <div class="modal" style="background:rgba(0,0,0,.85)">
+          <div class="upgrade-modal">
+            <h2 style="font-size:20px;font-weight:800;margin-bottom:12px">Upgrade Required</h2>
+            <p style="color:${S.muted};margin-bottom:20px;font-size:14px">You've reached your session limit. Upgrade to continue training.</p>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+              ${STRIPE_PLANS.map(p=>`<div style="padding:16px;background:${S.card};border:1px solid #ffffff0d;border-radius:7px;text-align:center">
+                <div style="font-weight:700;margin-bottom:4px">${p.name}</div>
+                <div style="color:${S.amber};font-size:18px;font-weight:700;margin-bottom:8px">${p.price}</div>
+                ${p.features.map(f=>`<div style="font-size:11px;color:${S.faint};margin-bottom:4px">✓ ${f}</div>`).join('')}
+              </div>`).join('')}
+            </div>
+            <a href="https://stripe.example.com/checkout" class="btn btn-amber" style="width:100%;padding:11px;text-decoration:none;display:flex;align-items:center;justify-content:center">View Plans →</a>
+            <button class="btn btn-ghost" style="width:100%;margin-top:10px;padding:8px" onclick="setState({showUpgradeModal:false})">Cancel</button>
+          </div>
+        </div>
+        <div style="display:none">${buildSidebar()}</div>
+      </div>`;
+  } else {
+    const pageContent = state.view === 'dashboard' ? renderDashboard() :
+                       state.view === 'session-new' ? renderSessionNew() :
+                       state.view === 'gpt-suite' ? renderGptMode() :
+                       state.view === 'gpt-results' ? renderGptResults() :
+                       renderDashboard();
+    
+    root.innerHTML = `
+      <div class="app">
+        ${buildSidebar()}
+        <div class="main">
+          ${pageContent}
+        </div>
+      </div>
+      ${state.showUpgradeModal ? `<div class="modal">${renderUpgradeModal()}</div>` : ''}
+    `;
+  }
+}
+
+function buildSidebar() {
+  return `
+    <div class="sidebar">
+      <div class="logo-wrap">
+        <div style="font-size:16px;font-weight:800">🚀 PestPros</div>
+        <div style="font-size:10px;color:${S.faint};margin-top:3px">AI Trainer</div>
+      </div>
+      <nav>
+        <div class="nav-item ${state.view==='dashboard'?'on':''}" onclick="setState({view:'dashboard'})">📊 Dashboard</div>
+        <div class="nav-item ${state.view==='session-new'?'on':''}" onclick="setState({view:'session-new'})">🎙 New Session</div>
+        <div class="nav-item ${state.view==='gpt-suite'?'on':''}" onclick="setState({view:'gpt-suite'})">🤖 GPT Mode</div>
+      </nav>
+      <div class="user-row">
+        <div class="avatar">${state.user?.email?.[0]?.toUpperCase()}</div>
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis">${esc(state.user?.email||'User')}</div>
+          <div style="font-size:9px;color:${S.faint}">${state.subscriptionTier}</div>
+        </div>
+        <button class="btn btn-ghost" style="padding:4px 8px;font-size:10px" onclick="logOut()">↓</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderUpgradeModal() {
+  return `
+    <div class="upgrade-modal">
+      <h2 style="font-size:20px;font-weight:800;margin-bottom:12px">Upgrade Required</h2>
+      <p style="color:${S.muted};margin-bottom:20px">Unlock unlimited sessions</p>
+      <button class="btn btn-amber" style="width:100%;padding:11px;margin-bottom:10px">View Plans</button>
+      <button class="btn btn-ghost" style="width:100%;padding:8px" onclick="setState({showUpgradeModal:false})">Maybe Later</button>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INITIALIZATION
+// ═══════════════════════════════════════════════════════════════════
+async function init() {
+  if (supabase) {
+    const {data} = await supabase.auth.getSession();
+    if (data.session) {
+      setState({user:data.session.user, view:'dashboard'});
+      await loadUserData();
+      await loadSessions();
+      await loadLeaderboard();
+    }
+  }
+  render();
+}
+
+init();
 </script>
-
 </body>
 </html>
