@@ -19,7 +19,17 @@ export function AuthForm() {
 
     try {
       if (mode === 'signup') {
-        const { error: err } = await supabase.auth.signUp({ email, password })
+        const redirectUrl = typeof window !== 'undefined' 
+          ? `${window.location.origin}/auth/callback`
+          : undefined
+        
+        const { error: err } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            emailRedirectTo: redirectUrl,
+          }
+        })
         if (err) {
           setError(err.message)
           return
