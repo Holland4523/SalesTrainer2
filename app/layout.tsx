@@ -1,15 +1,13 @@
 import type { Metadata } from 'next'
+import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 
+const geistSans = Geist({ subsets: ['latin'] })
+const geistMono = Geist_Mono({ subsets: ['latin'] })
+
 export const metadata: Metadata = {
-  title: 'PestPros AI Sales Trainer',
-  description: 'Master sales skills with AI-powered roleplay training',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+  title: 'Sales Trainer - AI-Powered Sales Practice',
+  description: 'Practice sales calls with AI-powered scenarios and get instant feedback',
 }
 
 export default function RootLayout({
@@ -19,7 +17,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={`${geistSans.className} antialiased`}>
+        {children}
+      </body>
     </html>
   )
 }
