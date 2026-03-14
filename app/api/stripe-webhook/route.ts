@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { supabaseServer } from '@/lib/supabase-server'
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-if (!webhookSecret) {
-  throw new Error('Missing STRIPE_WEBHOOK_SECRET')
-}
-
 export async function POST(req: NextRequest) {
   try {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+    if (!webhookSecret) {
+      return NextResponse.json({ error: 'Missing webhook secret' }, { status: 500 })
+    }
+
     const body = await req.text()
     const signature = req.headers.get('stripe-signature')
 

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { scoreTranscript } from '@/lib/openai'
 
 interface PracticeSessionProps {
   userId: string
@@ -44,7 +43,17 @@ export function PracticeSession({ userId, onBack }: PracticeSessionProps) {
 
     setLoading(true)
     try {
-      const result = await scoreTranscript(transcript)
+      const response = await fetch('/api/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript }),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to score transcript')
+      }
+      
+      const result = await response.json()
       setScore(result)
       setStep('results')
     } catch (error) {

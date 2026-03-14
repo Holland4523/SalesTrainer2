@@ -1,13 +1,18 @@
 import OpenAI from 'openai'
 
-const apiKey = process.env.OPENAI_API_KEY
-if (!apiKey) {
-  throw new Error('Missing OPENAI_API_KEY environment variable')
-}
+let openaiInstance: OpenAI | null = null
 
-export const openai = new OpenAI({
-  apiKey,
-})
+function getOpenAI() {
+  if (openaiInstance) return openaiInstance
+
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) {
+    throw new Error('Missing OPENAI_API_KEY environment variable')
+  }
+
+  openaiInstance = new OpenAI({ apiKey })
+  return openaiInstance
+}
 
 export async function scoreTranscript(transcript: string): Promise<{
   overall_score: number
@@ -19,6 +24,7 @@ export async function scoreTranscript(transcript: string): Promise<{
   improvements: string[]
 }> {
   try {
+    const openai = getOpenAI()
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
