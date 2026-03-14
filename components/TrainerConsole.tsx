@@ -96,27 +96,41 @@ Respond naturally to the sales rep's questions and objections.`
           <h1 className="mb-6 text-3xl font-bold text-white">Training Session</h1>
 
           <div className="mb-6 space-y-4">
+            <div className="rounded-lg border border-green-500/30 bg-green-900/20 p-6 mb-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Voice Practice Session</h2>
+                  <p className="text-green-400 text-sm">Click the mic icon in ChatGPT for voice mode</p>
+                </div>
+              </div>
+              
+              <p className="text-white/80 mb-4">Practice your sales pitch with AI-powered voice conversations. The GPT will act as a real customer based on your scenario.</p>
+              
+              <button
+                onClick={openGPT}
+                className="w-full rounded-lg bg-green-600 px-6 py-4 font-bold text-white text-lg hover:bg-green-500 transition-colors mb-3"
+              >
+                Start Voice Call with GPT
+              </button>
+              
+              <button
+                onClick={copyPrompt}
+                className="w-full rounded-lg border border-white/20 px-4 py-2 font-medium text-white/70 hover:bg-white/5 text-sm"
+              >
+                Copy Scenario Prompt
+              </button>
+            </div>
+            
             <div className="rounded-lg border border-white/5 bg-dark-card p-6">
-              <h2 className="mb-3 font-semibold text-white">Scenario</h2>
-              <p className="mb-4 text-white/70">{scenario.label}</p>
+              <h2 className="mb-3 font-semibold text-white">Scenario: {scenario.label}</h2>
               <p className="font-mono text-xs text-white/50 mb-4 p-4 bg-dark-bg rounded">
                 {systemPrompt}
               </p>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={copyPrompt}
-                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
-                >
-                  Copy Prompt
-                </button>
-                <button
-                  onClick={openGPT}
-                  className="flex-1 rounded-lg bg-green-600 px-4 py-2 font-semibold text-white hover:bg-green-700"
-                >
-                  Open Custom GPT
-                </button>
-              </div>
             </div>
 
             <div className="rounded-lg border border-white/5 bg-dark-card p-6">

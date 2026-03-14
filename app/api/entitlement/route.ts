@@ -15,6 +15,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
+    // Master account bypass - full access without subscription
+    const MASTER_EMAIL = 'dutchpeil@gmail.com'
+    if (userData.user.email === MASTER_EMAIL) {
+      return NextResponse.json({
+        tier: 'team',
+        status: 'active',
+        isMaster: true,
+      })
+    }
+
     // Get subscription
     const { data: subscription, error } = await supabaseServer
       .from('subscriptions')

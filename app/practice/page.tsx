@@ -85,7 +85,10 @@ export default function PracticePage() {
     )
   }
 
-  if (subscriptionTier === 'free') {
+  // Master account bypass
+  const isMasterAccount = user?.email === 'dutchpeil@gmail.com'
+  
+  if (subscriptionTier === 'free' && !isMasterAccount) {
     return (
       <div className="flex h-screen bg-dark-bg">
         <Sidebar />
